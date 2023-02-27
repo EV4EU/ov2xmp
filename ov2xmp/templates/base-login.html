@@ -1,0 +1,87 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+        <meta name="description" content="EV4EU O-V2X-MP" />
+        <meta name="author" content="PPC SA" />
+        <link rel="icon" type="image/x-icon" href="{% static 'favicon.ico' %}"/>
+
+        {% if title %}
+            <title>O-V2X-MP | {{ title }}</title>
+        {% else %}
+            <title>O-V2X-MP | Login</title>
+        {% endif %}
+
+        {# Vendor styles #}
+        {% block vendor_css %}
+          <!-- Font Awesome Icons -->
+          <!--  <link rel="stylesheet" href="{% static 'plugins/fontawesome-free/css/all.min.css' %}"> -->
+        {% endblock %}
+      
+        {# Global styles #}
+        {% block site_css %}
+            <!-- Theme style -->
+            <link rel="stylesheet" href="{% static 'dist/css/styles.css' %}" />
+            <!--
+                <style type="text/css">
+                    .card-header {
+                        background-color: #f7f5f7 !important;
+                    }
+                </style>
+            -->
+        {% endblock %}
+      
+        {# Page-specific styles #}
+        {% autoescape off %}
+        {% block page_css %}{% endblock %}
+        {% endautoescape %}
+      
+        {% block extra_head %}
+            {# Extra header stuff (scripts, styles, metadata, etc) #}
+        {% endblock %}
+    </head>
+
+    <body class="bg-primary">
+        <div id="layoutAuthentication">
+            <div id="layoutAuthentication_content">
+                <main>
+                    <div class="container">
+                        <div class="row justify-content-center">
+                            <div class="col-lg-5">
+                                {%block content %}{% endblock %}
+                            </div>
+                        </div>
+                    </div>
+                </main>
+            </div>
+            <div id="layoutAuthentication_footer">
+                {% include 'includes/footer.html' %}
+            </div>
+        </div>
+
+        {# Vendor Javascript #}
+        {% block vendor_js %}
+            <!-- jQuery -->
+
+            <!-- Bootstrap 5 -->
+            <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+            <!-- Font Awesome Icons -->
+            <script defer src="https://use.fontawesome.com/releases/v6.1.0/js/all.js" crossorigin="anonymous"></script>
+        {% endblock %}
+
+        {# Global Javascript #}
+        {% block site_js %}
+          <!-- BS Admin App -->
+          <script src="{% static 'dist/js/scripts.js' %}"></script>
+        {% endblock %}
+        
+        {# Page javascript #}
+        {% autoescape off %}
+        {% block page_js %}{% endblock %}
+        {% endautoescape %}
+    </body>
+</html>

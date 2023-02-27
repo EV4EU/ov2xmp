@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/4.1/ref/settings/
 
 from pathlib import Path
 import os
+from django.contrib.messages import constants as messages
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -33,6 +34,10 @@ ALLOWED_HOSTS = []
 
 INSTALLED_APPS = [
     'dashboard',
+    'users',
+
+    "crispy_forms",
+    "crispy_bootstrap5",
 
     'django.contrib.admin',
     'django.contrib.auth',
@@ -124,7 +129,28 @@ STATICFILES_DIRS = [
     os.path.join(BASE_DIR, "static"), 
 ]
 
+CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
+
+CRISPY_TEMPLATE_PACK = "bootstrap5"
+
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+LOGIN_REDIRECT_URL = "/"
+LOGOUT_REDIRECT_URL = "/"
+LOGIN_URL = 'login'
+
+
+MESSAGE_TAGS = {
+    messages.INFO: 'primary',
+    messages.DEBUG: 'primary',
+    messages.ERROR: 'danger',
+}
+
+#OTHERS
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+MEDIA_URL = '/media/'
+

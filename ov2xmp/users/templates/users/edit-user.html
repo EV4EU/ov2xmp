@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% load static %}
+{% load crispy_forms_tags %}
+{% block content %}
+
+<div class="row">
+    <div class="col-md-3">
+
+        <!-- Profile Image -->
+        <div class="card card-primary card-outline">
+            <div class="card-body box-profile">
+                <div class="text-center">
+                    {% if custom_user.profile.image %}
+                        <img class="profile-user-img img-fluid img-circle" height="128" width="128" src="{{ custom_user.profile.image.url }}"/>
+                    {% else %}
+                        <img class="profile-user-img img-fluid img-circle" height="128" width="128" src="{% static '/media/default.jpg' %}"/>
+                    {% endif %}
+                </div>
+                <h3 class="profile-username text-center">{{ custom_user.username }}</h3>
+                {% if custom_user.first_name and custom_user.last_name %}
+                    <p class="text-muted text-center">{{ custom_user.first_name }} {{ custom_user.last_name }} </p>
+                {% endif %}
+
+            </div>
+            <!-- /.card-body -->
+        </div>
+        <!-- /.card -->
+
+    </div>
+    <!-- /.col -->
+
+    <div class="col-md-9">
+
+        <div class="card card-primary card-outline card-outline-tabs">
+
+            <div class="card-header p-0 border-bottom-0">
+                <ul class="nav nav-tabs" id="profileTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="profile-tab" data-bs-toggle="tab" data-bs-target="#profile" type="button" role="tab" aria-controls="profile" aria-selected="true">Profile</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="password-tab" data-bs-toggle="tab" data-bs-target="#password" type="button" role="tab" aria-controls="password" aria-selected="false">Password</button>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="card-body">
+                <div class="tab-content" id="profileTabsContent">
+                    <div class="tab-pane fade show active" id="profile" role="tabpanel" aria-labelledby="profile-tab">
+                        <form method="POST" class='uniForm' enctype="multipart/form-data">
+                            {% csrf_token %}
+                            <fieldset class="form-group">
+                                {% crispy u_form %}
+                                {% crispy p_form %}
+                            </fieldset>
+                        </form>
+                    </div>
+                    <div class="tab-pane fade" id="password" role="tabpanel" aria-labelledby="password-tab">
+                        <form method="POST" enctype="multipart/form-data">
+                            {% csrf_token %}
+                            <fieldset class="form-group">
+                                {{ pass_form|crispy }}
+                            </fieldset>
+                            <div class="form-group">
+                                <button class="btn btn-outline-info" name="password" type="submit">Update</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+          
+    </div>
+    <!-- /.col -->
+
+</div>
+<!-- /.row -->
+
+{%  endblock content %}
