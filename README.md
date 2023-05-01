@@ -26,17 +26,17 @@
 
 5. Migrate
     ```sh
-    (venv) $ python o-v2x-mp/manage.py migrate
+    (venv) $ python ov2xmp/manage.py migrate
     ```
 
 6. Run the dev server 
     ```sh
-    (venv) $ python o-v2x-mp/manage.py runserver 0.0.0.0
+    (venv) $ python ov2xmp/manage.py runserver 0.0.0.0
     ```
 
 7. Create a superuser
     ```sh
-    (venv) $ python o-v2x-mp/manage.py createsuperuser
+    (venv) $ python ov2xmp/manage.py createsuperuser
     ```
 
 

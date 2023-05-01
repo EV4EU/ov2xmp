@@ -35,6 +35,10 @@ ALLOWED_HOSTS = []
 INSTALLED_APPS = [
     'dashboard',
     'users',
+    'chargepoint',
+    'connector',
+    'reservation',
+    'transaction',
 
     "crispy_forms",
     "crispy_bootstrap5",
@@ -154,3 +158,4 @@ MESSAGE_TAGS = {
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 MEDIA_URL = '/media/'
 
+os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
