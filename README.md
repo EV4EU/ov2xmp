@@ -19,7 +19,7 @@
     (venv) $ pip install -r requirements.txt
     ```
 
-4. Deploy the database
+4. **SKIP THIS FOR NOW** - Deploy the database
     ```sh
     $ docker-compose -f docker-compose-db.yml up -d
     ```
@@ -29,16 +29,29 @@
     (venv) $ python ov2xmp/manage.py migrate
     ```
 
-6. Run the dev server 
-    ```sh
-    (venv) $ python ov2xmp/manage.py runserver 0.0.0.0
-    ```
-
-7. Create a superuser
+6. Create a superuser
     ```sh
     (venv) $ python ov2xmp/manage.py createsuperuser
     ```
 
+7. Open a new tmux session
+    ```sh
+    (venv) $ tmux
+    ```
+
+8. Inside the tmux session, activate the environment, and run the dev server 
+    ```sh
+    (venv) $ python ov2xmp/manage.py runserver 0.0.0.0:8000
+    ```
+
+9. Detach from the tmux session, by pressing `CTRL + B` and `D`
+
+10. Open a new tmux session by issuing the `tmux` command
+
+11. Inside the new tmux session, activate the environment, and start the OCPP websocket server
+    ```sh
+    (venv) $ python ov2xmp/manage.py central_system_v16
+    ``` 
 
 ## Deploy O-V2X-MP using docker
  

@@ -25,9 +25,9 @@ class ChargePoint(cp):
         charge_point_serial_number = kwargs.get('charge_point_serial_number', None)
 
         ChargepointModel.objects.filter(pk=self.id).update(
-            chargepoint_serial_number = charge_point_vendor,
+            chargepoint_serial_number = charge_point_serial_number,
             chargepoint_model = charge_point_model, 
-            chargepoint_vendor = charge_point_serial_number
+            chargepoint_vendor = charge_point_vendor
         ) 
 
         # Sends BootNotification.conf as a response to the BootNotification.req
@@ -71,6 +71,7 @@ async def on_connect(websocket, path):
     cp = ChargePoint(charge_point_id, websocket)
 
     CHARGEPOINTS_V16.update({charge_point_id: cp})
+
     new_chargepoint = await sync_to_async(ChargepointModel.objects.filter, thread_sensitive=True)(pk=charge_point_id)
     if not (await sync_to_async(new_chargepoint.exists, thread_sensitive=True)()):
 
