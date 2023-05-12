@@ -44,6 +44,12 @@ class ChargePoint(cp):
             current_time=datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S") + "Z"
         )
 
+    @on(Action.StatusNotification)
+    def on_status_notification(self, **kwargs):
+        print(kwargs)
+        return call_result.StatusNotificationPayload()
+
+
 
 async def on_connect(websocket, path):
     # For every new charge point that connects, create a ChargePoint instance and start listening for messages.

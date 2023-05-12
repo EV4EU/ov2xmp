@@ -22,7 +22,7 @@ def manage_users(request):
 
 
 @login_required
-def create_user(request):
+def add_user(request):
     if request.user.is_superuser:
         if request.method == 'POST':
             form = UserRegisterForm(request.POST)
@@ -34,7 +34,7 @@ def create_user(request):
         else:
             form = UserRegisterForm()
         title = "Create New User"
-        return render(request, 'users/create-user.html', {'form': form, 'title': title})
+        return render(request, 'users/add-user.html', {'form': form, 'title': title})
     else:
         raise PermissionDenied
 

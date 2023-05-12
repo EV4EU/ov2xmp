@@ -16,12 +16,12 @@
             "justMyCode": true
         },
         {
-            "name": "Python: Django OCPP Management command",
+            "name": "OCPP Central System v1.6-J",
             "type": "python",
             "request": "launch",
             "program": "${workspaceFolder}/ov2xmp/manage.py",
             "args": [
-                "central_station_v16"
+                "central_system_v16"
             ],
             "django": true,
             "justMyCode": true
