@@ -81,7 +81,6 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'ov2xmp.wsgi.application'
 ASGI_APPLICATION = 'ov2xmp.asgi.application'
 
 # Database
