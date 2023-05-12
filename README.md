@@ -39,9 +39,9 @@
     (venv) $ tmux
     ```
 
-8. Inside the tmux session, activate the environment, and run the dev server 
+8. Inside the tmux session, activate the environment, and run the Django ASGI (daphne) server 
     ```sh
-    (venv) $ python ov2xmp/manage.py runserver 0.0.0.0:8000
+    (venv) $ daphne --bind 0.0.0.0 --port 8000 ov2xmp.asgi:application
     ```
 
 9. Detach from the tmux session, by pressing `CTRL + B` and `D`
