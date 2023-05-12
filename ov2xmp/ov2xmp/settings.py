@@ -51,6 +51,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
+    'oauth2_authcodeflow'
 ]
 
 MIDDLEWARE = [
@@ -61,6 +63,9 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+
+    'oauth2_authcodeflow.middleware.RefreshAccessTokenMiddleware',
+    'oauth2_authcodeflow.middleware.RefreshSessionMiddleware',
 ]
 
 ROOT_URLCONF = 'ov2xmp.urls'
@@ -82,6 +87,19 @@ TEMPLATES = [
 ]
 
 ASGI_APPLICATION = 'ov2xmp.asgi.application'
+
+#OAuth2
+# https://gitlab.com/systra/qeto/lib/django-oauth2-authcodeflow
+AUTHENTICATION_BACKENDS = [
+    'oauth2_authcodeflow.auth.AuthenticationBackend',
+    'django.contrib.auth.backends.ModelBackend',
+]
+OIDC_OP_DISCOVERY_DOCUMENT_URL = os.environ.get('OIDC_OP_DISCOVERY_DOCUMENT_URL', None)
+OIDC_RP_CLIENT_ID = os.environ.get('OIDC_RP_CLIENT_ID', None)
+OIDC_RP_CLIENT_SECRET = os.environ.get('OIDC_RP_CLIENT_SECRET', None)
+SESSION_COOKIE_SECURE = os.environ.get('SESSION_COOKIE_SECURE', True)
+OIDC_CREATE_USER = True
+
 
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
