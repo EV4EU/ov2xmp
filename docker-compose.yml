@@ -1,0 +1,17 @@
+version: '3.8'
+services:
+  redis:
+    container_name: redis
+    hostname: redis
+    image: redis:7.2-rc-alpine
+    restart: always
+    ports:
+      - '6379:6379'
+    command: redis-server --save 20 1 --loglevel warning --requirepass eYVX7EwVmmxKPCDmwMtyKVge8oLd2t81
+    volumes: 
+      - redis-data:/data
+
+volumes:
+  redis-data:
+    driver: local
+

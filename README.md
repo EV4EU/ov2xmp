@@ -53,6 +53,11 @@
     (venv) $ python ov2xmp/manage.py central_system_v16
     ``` 
 
+11. If you need to record the CSMS logs to a file, issue the following instead:
+    ```sh
+    (venv) $ python ov2xmp/manage.py central_system_v16 2>&1 | tee central_system_output-2.log
+    ```
+
 ## Deploy O-V2X-MP using docker
  
 TBD
