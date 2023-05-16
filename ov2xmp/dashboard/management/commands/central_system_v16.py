@@ -1,9 +1,10 @@
 import asyncio
 import logging
 from datetime import datetime
-import websockets
+from websockets.server import serve
 from django.core.management.base import BaseCommand
 from asgiref.sync import sync_to_async
+from websockets.typing import Subprotocol
 
 from chargepoint.models import Chargepoint as ChargepointModel
 
@@ -80,7 +81,7 @@ class ChargePoint(cp):
             type = ocpp_v16_enums.ResetType.hard
         )
         response = await self.call(request)
-        if response.status == ocpp_v16_enums.ResetStatus.accepted:
+        if response is not None and response.status == ocpp_v16_enums.ResetStatus.accepted:
             return True
         else:
             return False
@@ -90,7 +91,7 @@ class ChargePoint(cp):
             type = ocpp_v16_enums.ResetType.soft
         )
         response = await self.call(request)
-        if response.status == ocpp_v16_enums.ResetStatus.accepted:
+        if response is not None and response.status == ocpp_v16_enums.ResetStatus.accepted:
             return True
         else:
             return False
@@ -166,10 +167,9 @@ async def main():
 
     threading.Thread(target=lambda: app.run(host="0.0.0.0", port=5688, debug=True, use_reloader=False)).start()
 
-    server = await websockets.serve(on_connect, "0.0.0.0", 9016, subprotocols=["ocpp1.6"])
-
-    logging.info("Server Started listening to new connections...")
-    await server.wait_closed()
+    async with serve(on_connect, "0.0.0.0", 9016, subprotocols=[Subprotocol("ocpp1.6")]):
+        logging.info("Server Started listening to new connections...")
+        await asyncio.Future()
 
 
 class Command(BaseCommand):
