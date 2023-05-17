@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+{% block page_css %}
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+{% endblock page_css %}
+
+{% block content %}
+
+<div class="card">
+    <div class="card-body">
+        {% crispy idtag_form %}
+    </div>
+    <!-- /.card-body -->
+    <!--<div class="card-footer">
+        The footer of the card
+    </div>-->
+    <!-- /.card-footer -->
+</div>
+<!-- /.card -->
+
+{%  endblock content %}
+{% block page_js %}
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+    <script type="text/javascript">
+
+        flatpickr("#id_expiry_date", {
+            enableTime: true
+        });
+    </script>
+{% endblock page_js %}

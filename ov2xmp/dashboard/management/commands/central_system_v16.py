@@ -5,14 +5,20 @@ from websockets.server import serve
 from django.core.management.base import BaseCommand
 from asgiref.sync import sync_to_async
 from websockets.typing import Subprotocol
+import random
+from django.db import DatabaseError
 
 from chargepoint.models import Chargepoint as ChargepointModel
+from idtag.models import IdTag as idTagModel
+from transaction.models import Transaction as TransactionModel
+
 
 from ocpp.routing import on
 from ocpp.v16 import ChargePoint as cp
 from ocpp.v16 import call_result, call
 #from ocpp.v16.enums import Action, RegistrationStatus
 import ocpp.v16.enums as ocpp_v16_enums
+
 
 import redis
 from channels.layers import get_channel_layer
@@ -52,26 +58,82 @@ class ChargePoint(cp):
             status=ocpp_v16_enums.RegistrationStatus.accepted,
         )
     
+
     @on(ocpp_v16_enums.Action.Heartbeat)
     def on_heartbeat(self):
         return call_result.HeartbeatPayload(
             current_time=datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S") + "Z"
         )
 
-    # Register new connectors or update existing
+
+    # TODO: Register new connectors or update existing
     @on(ocpp_v16_enums.Action.StatusNotification)
     def on_status_notification(self, **kwargs):
         return call_result.StatusNotificationPayload()
 
+
     @on(ocpp_v16_enums.Action.Authorize)
-    def on_authorize(self):
-        # Check the Django database before accepting the idTag
-        result = {"status": "Accepted"}
-        
-        return call_result.AuthorizePayload(
-            id_tag_info = result
-        )
+    def on_authorize(self, id_tag):
+        status_rejected = {"status": ocpp_v16_enums.AuthorizationStatus.invalid}
+        status_accepted = {"status": ocpp_v16_enums.AuthorizationStatus.accepted}
+
+        if id_tag is not None: 
+            try:
+                idTag_object = idTagModel.objects.get(idToken=id_tag)
+                if not idTag_object.revoked:
+                    return call_result.AuthorizePayload(id_tag_info=status_accepted)
+            except idTagModel.DoesNotExist:
+                return call_result.AuthorizePayload(id_tag_info=status_rejected)
+        else:
+            return call_result.AuthorizePayload(id_tag_info=status_rejected)
+
     
+    @on(ocpp_v16_enums.Action.StartTransaction)
+    def on_startTransaction(self, connector_id, id_tag, meter_start, timestamp):
+        
+        new_transaction = TransactionModel.objects.create(
+            start_transaction_timestamp = timestamp,
+            wh_meter_start = meter_start,
+            id_tag = id_tag
+        )
+        
+        return call_result.StartTransactionPayload(
+            transaction_id = new_transaction.transaction_id,
+            id_tag_info = {
+                "status": ocpp_v16_enums.AuthorizationStatus.accepted
+            }
+        )
+
+
+    @on(ocpp_v16_enums.Action.MeterValues)
+    def on_meterValues(self, **kwargs):
+        transaction_id = kwargs.get('transaction_id', None)
+        meter_values = kwargs.get('meter_value', None)
+        connector_id = kwargs.get('connector_id', None)
+
+        return call_result.MeterValuesPayload()
+
+
+    @on(ocpp_v16_enums.Action.StopTransaction)
+    def on_stopTransaction(self, meter_stop, timestamp, transaction_id, reason, id_tag, transaction_data, **kwargs):
+        
+        try:
+            current_transaction = TransactionModel.objects.get(transaction_id=transaction_id)
+
+            current_transaction.stop_transaction_timestamp = timestamp
+            current_transaction.wh_meter_stop = meter_stop
+            if reason is not None:
+                current_transaction.reason_stopped = reason
+
+            current_transaction.save()
+
+            return call_result.StopTransactionPayload()
+        
+        except DatabaseError as e:
+            logging.error("Connection error with Django DB. The transaction details for # " + str(transaction_id) + " have not been saved.")
+            return call_result.StopTransactionPayload()
+
+
     ##########################################################################################################################
     #################### ACTIONS INITIATED BY THE CSMS #######################################################################
     ##########################################################################################################################

@@ -8,6 +8,7 @@
                     Dashboard
                 </a>
 
+                <!--
                 <div class="sb-sidenav-menu-heading">Interface</div>
                 <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapseLayouts" aria-expanded="false" aria-controls="collapseLayouts">
                     <div class="sb-nav-link-icon"><i class="fas fa-columns"></i></div>
@@ -51,6 +52,17 @@
                         </div>
                     </nav>
                 </div>
+                -->
+                <div class="sb-sidenav-menu-heading">ID Tags</div>
+                <a class="nav-link" href="{% url 'idtag-manage' %}">
+                    <div class="sb-nav-link-icon"><i class="fa-solid fa-id-card"></i></div>
+                    Manage ID Tags
+                </a>
+                <a class="nav-link" href="{% url 'idtag-add' %}">
+                    <div class="sb-nav-link-icon"><i class="fa-solid fa-plus"></i></div>
+                    Add ID Tag
+                </a>
+
                 {% if user.is_superuser %}
                 <div class="sb-sidenav-menu-heading">User Management</div>
                 <a class="nav-link" href="{% url 'users-manage' %}">

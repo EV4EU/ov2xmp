@@ -1,6 +1,5 @@
 from django.shortcuts import render
 from django.http import JsonResponse
-import dashboard.management.commands.central_system_v16 as csms 
 import requests
 import json
 
