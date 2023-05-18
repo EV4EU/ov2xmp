@@ -41,6 +41,8 @@ INSTALLED_APPS = [
     'transaction',
     'idtag',
 
+    'ocpp_api',
+
     'daphne',
 
     "crispy_forms",
@@ -53,6 +55,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
+    'rest_framework',
     'oauth2_authcodeflow'
 ]
 

@@ -6,12 +6,13 @@ from django.core.management.base import BaseCommand
 from asgiref.sync import sync_to_async
 from websockets.typing import Subprotocol
 import random
+import uuid 
 from django.db import DatabaseError
 
 from chargepoint.models import Chargepoint as ChargepointModel
 from idtag.models import IdTag as idTagModel
 from transaction.models import Transaction as TransactionModel
-
+from connector.models import Connector as ConnectorModel
 
 from ocpp.routing import on
 from ocpp.v16 import ChargePoint as cp
@@ -66,9 +67,24 @@ class ChargePoint(cp):
         )
 
 
-    # TODO: Register new connectors or update existing
     @on(ocpp_v16_enums.Action.StatusNotification)
-    def on_status_notification(self, **kwargs):
+    def on_status_notification(self, connector_id, status, **kwargs):
+        current_cp = ChargepointModel.objects.filter(pk=self.id).get()
+        if connector_id != 0:
+            connector_to_update = ConnectorModel.objects.filter(chargepoint=current_cp, connectorid=connector_id)
+            if connector_to_update.exists():
+                connector_to_update.update(availability_status= status)
+            else:
+                new_connector = ConnectorModel.objects.create(
+                    uuid = uuid.uuid4(),
+                    connectorid = connector_id,
+                    availability_status = status,
+                    chargepoint = current_cp
+                )
+                new_connector.save()
+        else:
+            ChargepointModel.objects.filter(pk=self.id).update(availability_status = status)
+        
         return call_result.StatusNotificationPayload()
 
 
@@ -96,7 +112,7 @@ class ChargePoint(cp):
             wh_meter_start = meter_start,
             id_tag = id_tag
         )
-        
+        new_transaction.save()
         return call_result.StartTransactionPayload(
             transaction_id = new_transaction.transaction_id,
             id_tag_info = {

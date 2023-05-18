@@ -18,20 +18,38 @@ from django.urls import path, include
 from django.contrib.auth import views as auth_views
 from django.conf import settings
 from django.conf.urls.static import static
+from rest_framework.schemas import get_schema_view
+from django.views.generic import TemplateView
 
 
 urlpatterns = [
     path('', include('dashboard.urls')),
     path('admin/', admin.site.urls),
-
-    path('api/', include("api.urls")),
+    path('api-auth/', include('rest_framework.urls')),
+    path('ocpp/', include("ocpp_api.urls")),
     path('idtag/', include("idtag.urls")),
+    path('chargepoint/', include("chargepoint.urls")),
+
+    path('openapi-schema/', get_schema_view(
+        title="O-V2X-MP REST API",
+        description="Bla bla",
+        version="1.0.0"
+    ), name='openapi-schema'),
+
+    path('api/', TemplateView.as_view(
+        template_name='swagger-ui.html',
+        extra_context={'schema_url':'openapi-schema'}
+    ), name='swagger-ui'),
 
     path("accounts/", include("django.contrib.auth.urls")),
     
     path('users/', include('users.urls')),
     path('oidc/', include('oauth2_authcodeflow.urls')),
 ]
+
+
+    
+    
 
 
 if settings.DEBUG:
