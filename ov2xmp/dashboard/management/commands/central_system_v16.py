@@ -5,7 +5,6 @@ from websockets.server import serve
 from django.core.management.base import BaseCommand
 from asgiref.sync import sync_to_async
 from websockets.typing import Subprotocol
-import random
 import uuid 
 from django.db import DatabaseError
 
@@ -34,6 +33,27 @@ logging.basicConfig(level=logging.INFO)
 app = Flask(__name__)
 
 CHARGEPOINTS_V16 = {}
+
+
+def authorize_idTag(id_token):
+    if id_token is not None: 
+        try:
+            idTag_object = idTagModel.objects.get(idToken=id_token)
+            if not idTag_object.revoked:
+                if idTag_object.expiry_date is not None:
+                    if idTag_object.expiry_date.timestamp() > datetime.utcnow().timestamp():
+                        return {"success": True, "status": ocpp_v16_enums.AuthorizationStatus.accepted}
+                    else:
+                        return {"success": True, "status": ocpp_v16_enums.AuthorizationStatus.expired}
+                else:
+                    return {"success": True, "status": ocpp_v16_enums.AuthorizationStatus.accepted}
+            else:
+                return {"success": False, "status": ocpp_v16_enums.AuthorizationStatus.blocked}
+        except idTagModel.DoesNotExist:
+            return {"success": False, "status": ocpp_v16_enums.AuthorizationStatus.invalid}
+    else:
+        return {"success": False, "status": None}
+
 
 class ChargePoint(cp):
     ##########################################################################################################################
@@ -75,33 +95,23 @@ class ChargePoint(cp):
             if connector_to_update.exists():
                 connector_to_update.update(availability_status= status)
             else:
-                new_connector = ConnectorModel.objects.create(
+                ConnectorModel.objects.create(
                     uuid = uuid.uuid4(),
                     connectorid = connector_id,
                     availability_status = status,
                     chargepoint = current_cp
                 )
-                new_connector.save()
         else:
-            ChargepointModel.objects.filter(pk=self.id).update(availability_status = status)
+            current_cp.availability_status = status
+            current_cp.save()
         
         return call_result.StatusNotificationPayload()
 
 
     @on(ocpp_v16_enums.Action.Authorize)
     def on_authorize(self, id_tag):
-        status_rejected = {"status": ocpp_v16_enums.AuthorizationStatus.invalid}
-        status_accepted = {"status": ocpp_v16_enums.AuthorizationStatus.accepted}
-
-        if id_tag is not None: 
-            try:
-                idTag_object = idTagModel.objects.get(idToken=id_tag)
-                if not idTag_object.revoked:
-                    return call_result.AuthorizePayload(id_tag_info=status_accepted)
-            except idTagModel.DoesNotExist:
-                return call_result.AuthorizePayload(id_tag_info=status_rejected)
-        else:
-            return call_result.AuthorizePayload(id_tag_info=status_rejected)
+        result = authorize_idTag(id_tag)
+        return call_result.AuthorizePayload(id_tag_info={"status": result["status"]})
 
     
     @on(ocpp_v16_enums.Action.StartTransaction)
@@ -110,13 +120,15 @@ class ChargePoint(cp):
         new_transaction = TransactionModel.objects.create(
             start_transaction_timestamp = timestamp,
             wh_meter_start = meter_start,
-            id_tag = id_tag
+            id_tag = idTagModel.objects.get(idToken=id_tag)
         )
         new_transaction.save()
+
+        result = authorize_idTag(id_tag)
         return call_result.StartTransactionPayload(
             transaction_id = new_transaction.transaction_id,
             id_tag_info = {
-                "status": ocpp_v16_enums.AuthorizationStatus.accepted
+                "status": result["status"]
             }
         )
 
@@ -127,19 +139,21 @@ class ChargePoint(cp):
         meter_values = kwargs.get('meter_value', None)
         connector_id = kwargs.get('connector_id', None)
 
+        logging.info("MeterValue received: {Transaction ID: " + str(transaction_id) + ", Connector ID: " + str(connector_id))
+        logging.info(meter_values)
+
         return call_result.MeterValuesPayload()
 
 
     @on(ocpp_v16_enums.Action.StopTransaction)
-    def on_stopTransaction(self, meter_stop, timestamp, transaction_id, reason, id_tag, transaction_data, **kwargs):
+    def on_stopTransaction(self, meter_stop, timestamp, transaction_id, reason, id_tag, transaction_data):
         
         try:
             current_transaction = TransactionModel.objects.get(transaction_id=transaction_id)
 
             current_transaction.stop_transaction_timestamp = timestamp
             current_transaction.wh_meter_stop = meter_stop
-            if reason is not None:
-                current_transaction.reason_stopped = reason
+            current_transaction.reason_stopped = reason
 
             current_transaction.save()
 
@@ -154,25 +168,42 @@ class ChargePoint(cp):
     #################### ACTIONS INITIATED BY THE CSMS #######################################################################
     ##########################################################################################################################
 
-    async def hard_reset(self):
-        request = call.ResetPayload(
-            type = ocpp_v16_enums.ResetType.hard
-        )
+    async def reset(self, type):
+        if type == "hard":
+            request = call.ResetPayload(type = ocpp_v16_enums.ResetType.hard)
+        else:
+            request = call.ResetPayload(type = ocpp_v16_enums.ResetType.soft)
+
         response = await self.call(request)
         if response is not None and response.status == ocpp_v16_enums.ResetStatus.accepted:
             return True
         else:
             return False
 
-    async def soft_reset(self):
-        request = call.ResetPayload(
-            type = ocpp_v16_enums.ResetType.soft
+    
+    async def remote_start_transaction(self, id_tag, connector_id=None, charging_profile=None):
+        request = call.RemoteStartTransactionPayload(
+            connector_id=connector_id,
+            id_tag=id_tag,
+            charging_profile=charging_profile
         )
         response = await self.call(request)
-        if response is not None and response.status == ocpp_v16_enums.ResetStatus.accepted:
+        if response is not None and response.status == ocpp_v16_enums.RemoteStartStopStatus.accepted:
             return True
         else:
             return False
+        
+
+    async def remote_stop_transaction(self, transaction_id):
+        request = call.RemoteStopTransactionPayload(
+            transaction_id=transaction_id
+        )
+        response = await self.call(request)
+        if response is not None and response.status == ocpp_v16_enums.RemoteStartStopStatus.accepted:
+            return True
+        else:
+            return False
+
 
 ##########################################################################################################################
 ##################### CSMS REST API ######################################################################################
@@ -182,24 +213,53 @@ class ChargePoint(cp):
 @app.route("/ocpp/reset/<resetType>/<chargepoint_id>")
 async def reset(resetType, chargepoint_id):
     if chargepoint_id in CHARGEPOINTS_V16:
-        if resetType == "soft":
-            success = await CHARGEPOINTS_V16[chargepoint_id].soft_reset()
-            if success:
-                return jsonify({"status": "success", "message": "Soft Reset succcessful"})
+        if resetType == "soft" or resetType == "hard":
+            result = await CHARGEPOINTS_V16[chargepoint_id].reset(resetType)
+            if result:
+                return jsonify({'success': True, "status": resetType + " reset succcessful"})
             else:
-                return jsonify({"status": "error", "message": "Soft Reset failed"})
-        elif resetType == "hard":
-            success = await CHARGEPOINTS_V16[chargepoint_id].hard_reset()
-            if success:
-                return jsonify({"status": "success", "message": "Soft Reset succcessful"})
-            else:
-                return jsonify({"status": "error", "message": "Soft Reset failed"})
+                return jsonify({"success": False, "status": resetType + " reset failed"})
         else:
-            return jsonify({"status": "error", "message": "Invalid Reset Type. Allowed values: hard, reset"})
+            return jsonify({"success": False, "status": "Invalid Reset Type. Allowed values: hard, reset"})
     else:
-        return jsonify({"status": "error", "message": "Charge Point does not exist"})
+        return jsonify({"success": False, "status": "Charge Point does not exist"})
 
 
+# Remote Start Transaction  
+@app.route("/ocpp/remotestarttransaction/<chargepoint_id>", methods=["POST"])
+async def remote_start_transaction(chargepoint_id):
+    if chargepoint_id in CHARGEPOINTS_V16:
+        connector_id = request.form.get('connector_id')
+        id_tag = request.form.get('id_tag')
+        charging_profile = request.form.get('charging_profile', None)
+        result = CHARGEPOINTS_V16[chargepoint_id].remote_start_transaction(id_tag, connector_id, charging_profile)
+        if result:
+            return jsonify({"success": True, "status": "Remote Transaction started"})
+        else:
+            return jsonify({"success": False, "status": "Remote Transaction failed"})
+    else:
+        return jsonify({"success": False, "status": "Charge Point does not exist"})
+
+
+# Remote Stop Transaction  
+@app.route("/ocpp/remotestoptransaction/<chargepoint_id>", methods=["POST"])
+async def remote_stop_transaction(chargepoint_id):
+    if chargepoint_id in CHARGEPOINTS_V16:
+        transaction_id = request.form.get('transaction_id')
+        result = CHARGEPOINTS_V16[chargepoint_id].remote_stop_transaction(transaction_id)
+        if result:
+            return jsonify({"success": True, "message": "Remote Transaction stopped"})
+        else:
+            return jsonify({"success": False, "message": "Remote Stop Transaction failed"})
+    else:
+        return jsonify({"success": False, "message": "Charge Point does not exist"})
+    #else:
+    #    return jsonify({"status": "error", "message": "HTTP POST is supported"})
+
+
+##########################################################################################################################
+##########################################################################################################################
+##########################################################################################################################
 
 async def on_connect(websocket, path):
     # For every new charge point that connects, create a ChargePoint instance and start listening for messages.
@@ -229,14 +289,9 @@ async def on_connect(websocket, path):
     CHARGEPOINTS_V16.update({charge_point_id: cp})
 
     new_chargepoint = await sync_to_async(ChargepointModel.objects.filter, thread_sensitive=True)(pk=charge_point_id)
+
     if not (await sync_to_async(new_chargepoint.exists, thread_sensitive=True)()):
-
-        new_cp = await sync_to_async(ChargepointModel.objects.create, thread_sensitive=True)(
-            chargepoint_url_identity = charge_point_id,
-            ocpp_version = "1.6-J"
-        )
-
-        await sync_to_async(new_cp.save, thread_sensitive=True)()
+        await ChargepointModel.objects.acreate(chargepoint_url_identity = charge_point_id, ocpp_version="1.6-J")
 
     await cp.start()
 

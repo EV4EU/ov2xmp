@@ -13,10 +13,11 @@
     $ python3 -m venv venv
     ```
 
-3. Activate the environment and install the requirements
+3. Activate the environment and install the requirements. Install also the prerequisites needed to build the `python-ldap` library.
     ```sh
     $ source ./venv/bin/activate
     (venv) $ pip install -r requirements.txt
+    $ apt install gcc libldap2-dev libsasl2-dev ldap-utils
     ```
 
 4. **SKIP THIS FOR NOW** - Deploy the database
@@ -34,29 +35,41 @@
     (venv) $ python ov2xmp/manage.py createsuperuser
     ```
 
-7. Open a new tmux session
+7. Go inside the ov2xmp folder and open a new tmux session
     ```sh
+    (venv) $ cd ov2xmp
     (venv) $ tmux
     ```
 
 8. Inside the tmux session, activate the environment, and run the Django ASGI (daphne) dev server 
     ```sh
-    (venv) $ python ov2xmp/manage.py runserver 0.0.0.0:8000
+    $ source ../venv/bin/activate
+    (venv) $ python manage.py runserver 0.0.0.0:8000
     ```
+    Detach from the tmux session, by pressing `CTRL + B` and `D`.
 
-9. Detach from the tmux session, by pressing `CTRL + B` and `D`
-
-10. Open a new tmux session by issuing the `tmux` command
-
-11. Inside the new tmux session, activate the environment, and start the OCPP websocket server
+9. Open a new tmux session by issuing the `tmux` command. Inside the new tmux session, activate the environment, and start the OCPP websocket server
     ```sh
-    (venv) $ python ov2xmp/manage.py central_system_v16
+    (venv) $ python manage.py central_system_v16
     ``` 
 
-11. If you need to record the CSMS logs to a file, issue the following instead:
+    Alternatively, if you need to record the CSMS logs to a file, issue the following instead:
     ```sh
-    (venv) $ python ov2xmp/manage.py central_system_v16 2>&1 | tee central_system_output-2.log
+    (venv) $ python manage.py central_system_v16 2>&1 | tee central_system_output-2.log
     ```
+
+10. Open a new tmux session by issuing the `tmux` command, and start the Celery worker:
+    ```sh
+    $ source ../venv/bin/activate
+    (venv) $ celery -A ov2xmp worker -l info
+    ```
+
+11. Open a new tmux session by issuing the `tmux` command, and start the Celery Flower module:
+    ```sh
+    $ source ../venv/bin/activate
+    (venv) $ celery -A ov2xmp flower
+    ```
+
 
 ## Deploy O-V2X-MP using docker
  

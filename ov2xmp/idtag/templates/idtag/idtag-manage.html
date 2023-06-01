@@ -1,32 +1,30 @@
 {% extends "base.html" %}
 {% load static %}
 {% block page_css %}
-    <link href="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/style.css" rel="stylesheet" type="text/css">
+    <link href="https://cdn.jsdelivr.net/npm/simple-datatables@7.2/dist/style.css" rel="stylesheet" type="text/css">
 {% endblock page_css %}
 
 {% block content %}
-<div class="row">
-    <div class="card" style="width: 100%">
-        <div class="card-body">
-            <table id="datatable_idtag" class="table table-bordered table-hover dataTable">
-            <thead>
-                <tr>
-                    <th>Edit</th>
-                    <th class="sorting">ID Token</th>
-                    <th class="sorting">Associated User</th>
-                    <th class="sorting">Expiration Date</th>
-                    <th class="sorting">Activated</th>
-                    <th>Delete</th>
-                </tr>
-            </thead>
-            </table>
-        </div>
+<div class="card">
+    <div class="card-body">
+        <table id="datatable_idtag" class="table table-bordered table-hover dataTable" style="word-break: break-all;">
+        <thead>
+            <tr>
+                <th>Edit</th>
+                <th class="sorting">ID Token</th>
+                <th class="sorting">Associated User</th>
+                <th class="sorting">Expiration Date</th>
+                <th class="sorting">Activated</th>
+                <th>Delete</th>
+            </tr>
+        </thead>
+        </table>
     </div>
 </div>
 {% endblock content %}
 
 {% block page_js %}
-    <script src="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2" type="text/javascript"></script>
+    <script src="https://cdn.jsdelivr.net/npm/simple-datatables@7.2" type="text/javascript"></script>
 
     <script type="text/javascript">
 
@@ -35,7 +33,7 @@
         var xhttp = new XMLHttpRequest();
         xhttp.onreadystatechange = function() {
             if (this.readyState == 4 && this.status == 200) {
-                let data = JSON.parse(this.responseText)["data"];
+                let data = JSON.parse(this.responseText);
                 var data_to_datatable = []
 
                 for (let i=0; i<data.length; i++) {
@@ -48,7 +46,7 @@
                     idtags_datatable.rows.add([
                         "<a href='/idtag/edit/" + data[i]["idToken"] + "'><i class='fas fa-arrow-circle-right'></i></a>",
                         data[i]["idToken"],
-                        data[i]["username"],
+                        data[i]["user"],
                         data[i]["expiry_date"],
                         activated_icon,
                         "<a href='/idtag/delete/" + data[i]["idToken"] + "'><i style='color: red;' class='fas fa-minus-circle'></i></a>"
@@ -57,7 +55,7 @@
             }
         };
 
-        xhttp.open("GET", "/idtag/get", true);
+        xhttp.open("GET", "/api/idtag/?format=json", true);
         xhttp.send();
         
         

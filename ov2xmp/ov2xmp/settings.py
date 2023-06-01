@@ -40,13 +40,16 @@ INSTALLED_APPS = [
     'reservation',
     'transaction',
     'idtag',
+    'tasks',
 
-    'ocpp_api',
+    'api',
 
     'daphne',
+    'celery',
 
     "crispy_forms",
     "crispy_bootstrap5",
+    'timezone_field',
 
     'django.contrib.admin',
     'django.contrib.auth',
@@ -54,6 +57,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
+    'channels',
+    'channels_redis',
 
     'rest_framework',
     'oauth2_authcodeflow'
@@ -92,40 +98,63 @@ TEMPLATES = [
 
 ASGI_APPLICATION = 'ov2xmp.asgi.application'
 
-#OAuth2
-# https://gitlab.com/systra/qeto/lib/django-oauth2-authcodeflow
-'''
+###########################################################################
+################ A U T H E N T I C A T I O N ##############################
+###########################################################################
+
 AUTHENTICATION_BACKENDS = [
     'oauth2_authcodeflow.auth.AuthenticationBackend',
     'django.contrib.auth.backends.ModelBackend',
 ]
-OIDC_OP_DISCOVERY_DOCUMENT_URL = os.environ.get('OIDC_OP_DISCOVERY_DOCUMENT_URL', None)
-OIDC_RP_CLIENT_ID = os.environ.get('OIDC_RP_CLIENT_ID', None)
-OIDC_RP_CLIENT_SECRET = os.environ.get('OIDC_RP_CLIENT_SECRET', None)
-SESSION_COOKIE_SECURE = os.environ.get('SESSION_COOKIE_SECURE', True)
-OIDC_CREATE_USER = True
-'''
 
+# === OAuth2 Settings === (https://gitlab.com/systra/qeto/lib/django-oauth2-authcodeflow)
+# OIDC should be manually enabled in .env
+if os.environ.get('OIDC_ENABLE', 0):
+    OIDC_OP_DISCOVERY_DOCUMENT_URL = os.environ.get('OIDC_OP_DISCOVERY_DOCUMENT_URL', None)
+    OIDC_RP_CLIENT_ID = os.environ.get('OIDC_RP_CLIENT_ID', None)
+    OIDC_RP_CLIENT_SECRET = os.environ.get('OIDC_RP_CLIENT_SECRET', None)
+    SESSION_COOKIE_SECURE = os.environ.get('SESSION_COOKIE_SECURE', True)
+    OIDC_CREATE_USER = True
 
-# Database
-# https://docs.djangoproject.com/en/4.1/ref/settings/#databases
+# === LDAP Settings ===
+# LDAP should be manually enabled in .env
+AUTH_LDAP_ENABLE = bool(int(os.environ.get('AUTH_LDAP_ENABLE', 0)))
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+if AUTH_LDAP_ENABLE:
+    import ldap
+
+    # The custom LDAP backend is used, instead of the default
+    AUTHENTICATION_BACKENDS.append('sivi.ldap.CustomLDAPBackend')
+
+     # The following format is expected: ldap://ldap.example.com
+    AUTH_LDAP_SERVER_URI = os.environ.get('AUTH_LDAP_SERVER_URI', None)
+
+    # Read-only user that is able to bind and search for other users. Some LDAP servers support anonymous login, however, we assume that a 
+    # bind account must be provided.
+    AUTH_LDAP_BIND_DN = os.environ.get('AUTH_LDAP_BIND_DN', None)
+    AUTH_LDAP_BIND_PASSWORD = os.environ.get('AUTH_LDAP_BIND_PASSWORD', None)
+    AUTH_LDAP_USER_DN_TEMPLATE = "CN=%(user)s," + os.environ.get('AUTH_LDAP_SEARCH_DN', 'None')
+
+    # Enforce TLS - We do not accept transmitting LDAP credentials without TLS!
+    AUTH_LDAP_START_TLS = True
+
+    # We disable cerificate verification, because many LDAP servers usually have self-signed certificates. 
+    AUTH_LDAP_GLOBAL_OPTIONS = {
+        ldap.OPT_X_TLS_REQUIRE_CERT: ldap.OPT_X_TLS_NEVER   # type: ignore
     }
-}
 
-CHANNEL_LAYERS = {
-    "default": {
-        "BACKEND": "channels_redis.pubsub.RedisPubSubChannelLayer",
-        "CONFIG": {
-            "hosts": [("docker-lab.trsc.net", 6379)],
-        },
-    },
-}
+    # Maps basic user attributes with LDAP fields
+    AUTH_LDAP_USER_ATTR_MAP = {
+        # AUTH_LDAP_USER_ATTR_MAP_FIRSTNAME is usually `givenName`.
+        "first_name": os.environ.get('AUTH_LDAP_USER_ATTR_MAP_FIRSTNAME', None),  
+        # AUTH_LDAP_USER_ATTR_MAP_LASTNAME is usually `sn`.
+        "last_name": os.environ.get('AUTH_LDAP_USER_ATTR_MAP_LASTNAME', None),
+        # AUTH_LDAP_USER_ATTR_MAP_EMAIL is usually `mail`.
+        "email": os.environ.get('AUTH_LDAP_USER_ATTR_MAP_EMAIL', None)
+    }
 
+###########################################################################
+###########################################################################
 
 # Password validation
 # https://docs.djangoproject.com/en/4.1/ref/settings/#auth-password-validators
@@ -146,15 +175,38 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 
+# Database
+# https://docs.djangoproject.com/en/4.1/ref/settings/#databases
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
+    }
+}
+
+
+# Channels
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.pubsub.RedisPubSubChannelLayer",
+        "CONFIG": {
+            "hosts": [
+                (os.environ.get('REDIS_BROKER_HOST', 'docker-lab.trsc.net'), int(os.environ.get('REDIS_BROKER_PORT', '6379')))
+            ],
+        },
+    },
+}
+os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
+
+
 # Internationalization
 # https://docs.djangoproject.com/en/4.1/topics/i18n/
 
 LANGUAGE_CODE = 'en-us'
-
 TIME_ZONE = 'UTC'
-
 USE_I18N = True
-
 USE_TZ = True
 
 
@@ -162,15 +214,15 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.1/howto/static-files/
 
 STATIC_URL = 'static/'
-
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, "static"), 
 ]
 
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
-
 CRISPY_TEMPLATE_PACK = "bootstrap5"
 
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+MEDIA_URL = '/media/'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
@@ -178,9 +230,8 @@ CRISPY_TEMPLATE_PACK = "bootstrap5"
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 LOGIN_REDIRECT_URL = "/"
-LOGOUT_REDIRECT_URL = "/"
+LOGOUT_REDIRECT_URL = "login"
 LOGIN_URL = 'login'
-
 
 MESSAGE_TAGS = {
     messages.INFO: 'primary',
@@ -188,8 +239,71 @@ MESSAGE_TAGS = {
     messages.ERROR: 'danger',
 }
 
-#OTHERS
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
-MEDIA_URL = '/media/'
 
-os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
+# === Celery settings ===
+CELERY_BROKER_URL = "redis://" + os.environ.get('REDIS_BROKER_HOST', 'docker-lab.trsc.net') + ":" + os.environ.get('REDIS_BROKER_PORT', '6379') + "/"
+CELERY_RESULT_BACKEND = "redis://" + os.environ.get('REDIS_BROKER_HOST', 'docker-lab.trsc.net') + ":" + os.environ.get('REDIS_BROKER_PORT', '6379') + "/"
+CELERY_ENABLE_UTC = True
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_ACCEPT_CONTENT = ['json']
+
+
+# === SMTP settings ===
+EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', None)
+EMAIL_HOST = os.environ.get('EMAIL_SMTP_HOST', None)
+EMAIL_HOST_USER = os.environ.get('EMAIL_USER', None)
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_PASSWORD', None)
+EMAIL_PORT = os.environ.get('EMAIL_SMTP_PORT', None)
+
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
+
+# === Logging settings ===
+# If Django does not have write permissions in `/var/log/ov2xmp/`, Django cannot start.
+if not os.path.exists('/var/log/ov2xmp/'):
+    os.makedirs('/var/log/ov2xmp/')
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'standard': {
+            'format': '%(asctime)s [%(levelname)s] %(name)s: %(message)s'
+        },
+    },
+    'handlers': {
+        'default': {
+            'level': 'DEBUG',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': '/var/log/ov2xmp/ov2xmp.log',
+            'maxBytes': 1024*1024*10,  # 10 MB
+            'backupCount': 5,
+            'formatter': 'standard',
+        },
+        'request_handler': {
+            'level': 'DEBUG',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': '/var/log/ov2xmp/django_requests.log',
+            'maxBytes': 1024*1024*10,  # 10 MB
+            'backupCount': 5,
+            'formatter': 'standard',
+        }
+    },
+    'loggers': {
+        '': {
+            'handlers': ['default'],
+            'level': 'DEBUG',
+            'propagate': True
+        },
+        'django.request': {
+            'handlers': ['request_handler'],
+            'level': 'DEBUG',
+            'propagate': False
+        },
+        'django_auth_ldap': {
+            'level': 'DEBUG', 
+            'handlers': ['default']
+        }
+    },
+}
+

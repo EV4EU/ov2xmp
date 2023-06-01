@@ -10,3 +10,4 @@ class Chargepoint(models.Model):
     ip_address = models.CharField(max_length=15, null=True)
     availability_status = models.CharField(max_length=20, null=True)
     ocpp_version = models.CharField(max_length=5)
+    last_heartbeat = models.DateTimeField(null=True)

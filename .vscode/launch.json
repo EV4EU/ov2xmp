@@ -10,7 +10,8 @@
             "request": "launch",
             "program": "${workspaceFolder}/ov2xmp/manage.py",
             "args": [
-                "runserver"
+                "runserver",
+                "0.0.0.0:8000"
             ],
             "django": true,
             "justMyCode": true

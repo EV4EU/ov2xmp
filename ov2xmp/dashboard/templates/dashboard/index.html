@@ -139,6 +139,24 @@
         searchable: false,
         fixedHeight: true,
     });
+
+    let ws_protocol;
+    if (location.protocol === 'https:')
+        ws_protocol = 'wss://';
+    else
+        ws_protocol = 'ws://';
+    
+    let tasksWebSocket = new WebSocket(ws_protocol + window.location.host + '/ws/tasks_updates/');
+
+    tasksWebSocket.onmessage = function (e) {
+        console.log(e);
+        let taskUpdate = JSON.parse(JSON.parse(e.data).message);
+        console.log(taskUpdate);
+    }
+
+
+
+
 </script>
 
 
