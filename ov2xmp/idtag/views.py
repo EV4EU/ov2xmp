@@ -137,7 +137,7 @@ class IdtagDetailApiView(GenericAPIView):
     # 3. Retrieve
     def get(self, request, id_token, *args, **kwargs):
         '''
-        Retrieves the Chargepoint with given chargepoint_url_identity
+        Retrieves the Chargepoint with given chargepoint_id
         '''
         idtag_instance = self.get_object(id_token=id_token)
         if not idtag_instance:
@@ -152,7 +152,7 @@ class IdtagDetailApiView(GenericAPIView):
     # 4. Update
     def put(self, request, id_token, *args, **kwargs):
         '''
-        Updates the Chargepoint item with given chargepoint_url_identity, if exists
+        Updates the Chargepoint item with given chargepoint_id, if exists
         '''
         idtag_instance = self.get_object(id_token)
         if not idtag_instance:
@@ -169,7 +169,7 @@ class IdtagDetailApiView(GenericAPIView):
     # 5. Delete
     def delete(self, request, id_token, *args, **kwargs):
         '''
-        Deletes the Chargepoint item with given chargepoint_url_identity, if exists
+        Deletes the Chargepoint item with given chargepoint_id, if exists
         '''
         idtag_instance = self.get_object(id_token)
         if not idtag_instance:

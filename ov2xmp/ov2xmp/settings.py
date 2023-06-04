@@ -58,6 +58,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
+    'django_celery_results',
+
     'channels',
     'channels_redis',
 
@@ -242,7 +244,9 @@ MESSAGE_TAGS = {
 
 # === Celery settings ===
 CELERY_BROKER_URL = "redis://" + os.environ.get('REDIS_BROKER_HOST', 'docker-lab.trsc.net') + ":" + os.environ.get('REDIS_BROKER_PORT', '6379') + "/"
-CELERY_RESULT_BACKEND = "redis://" + os.environ.get('REDIS_BROKER_HOST', 'docker-lab.trsc.net') + ":" + os.environ.get('REDIS_BROKER_PORT', '6379') + "/"
+#CELERY_RESULT_BACKEND = "redis://" + os.environ.get('REDIS_BROKER_HOST', 'docker-lab.trsc.net') + ":" + os.environ.get('REDIS_BROKER_PORT', '6379') + "/"
+CELERY_RESULT_BACKEND = 'django-db'
+CELERY_CACHE_BACKEND = 'django-cache'
 CELERY_ENABLE_UTC = True
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_ACCEPT_CONTENT = ['json']
@@ -258,6 +262,7 @@ EMAIL_PORT = os.environ.get('EMAIL_SMTP_PORT', None)
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 
+'''
 # === Logging settings ===
 # If Django does not have write permissions in `/var/log/ov2xmp/`, Django cannot start.
 if not os.path.exists('/var/log/ov2xmp/'):
@@ -306,4 +311,4 @@ LOGGING = {
         }
     },
 }
-
+'''

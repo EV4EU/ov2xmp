@@ -6,6 +6,9 @@ from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 import json
 
+import logging
+logging.basicConfig(level=logging.INFO)
+
 
 channel_layer = get_channel_layer()
 
@@ -19,27 +22,57 @@ def send_task_update(message):
 
 
 @shared_task()
-def ocpp_reset_task(reset_type, chargepoint_url_identity):
-    message = requests.get("http://localhost:5688/ocpp/reset/" + reset_type + "/" + chargepoint_url_identity).json()
+def ocpp_reset_task(reset_type, chargepoint_id):
+    message = requests.get("http://localhost:5688/ocpp/reset/" + reset_type + "/" + chargepoint_id).json()
     send_task_update(message)
     return message
 
 
 @shared_task()
-def ocpp_remote_start_transaction(chargepoint_url_identity, connector_id, id_tag, charging_profile):
-    message = requests.post("http://localhost:5688/ocpp/remotestarttrasaction/" + chargepoint_url_identity, json={"connector_id": connector_id, "id_tag": id_tag, "charging_profile": charging_profile}).json()
+def ocpp_remote_start_transaction(chargepoint_id, connector_id, id_tag, charging_profile):
+    message = requests.post("http://localhost:5688/ocpp/remotestarttrasaction/" + chargepoint_id, json={"connector_id": connector_id, "id_tag": id_tag, "charging_profile": charging_profile}).json()
     send_task_update(message)
     return message
 
 
 @shared_task()
-def ocpp_remote_stop_transaction(chargepoint_url_identity, transaction_id):
-    message = requests.post("http://localhost:5688/ocpp/remotestoptrasaction/" + chargepoint_url_identity, json={"transaction_id": transaction_id}).json()
+def ocpp_remote_stop_transaction(chargepoint_id, transaction_id):
+    message = requests.post("http://localhost:5688/ocpp/remotestoptrasaction/" + chargepoint_id, json={"transaction_id": transaction_id}).json()
+    send_task_update(message)
+    return message
+
+
+@shared_task()
+def ocpp_reserve_now(chargepoint_id, connector_id, id_tag, expiry_date, reservation_id):
+    message = requests.post("http://localhost:5688/ocpp/reservenow/" + chargepoint_id, json={"connector_id": connector_id, "id_tag": id_tag, "expiry_date": expiry_date, "reservation_id": reservation_id}).json()
+    send_task_update(message)
+    return message
+
+
+@shared_task()
+def ocpp_cancel_reservation(chargepoint_id, reservation_id):
+    message = requests.post("http://localhost:5688/ocpp/cancelreservation/" + chargepoint_id, json={"reservation_id": reservation_id}).json()
+    send_task_update(message)
+    return message
+
+
+@shared_task()
+def ocpp_change_availability(chargepoint_id, reservation_id):
+    message = requests.post("http://localhost:5688/ocpp/cancelreservation/" + chargepoint_id, json={"reservation_id": reservation_id}).json()
+    send_task_update(message)
+    return message
+
+
+@shared_task()
+def ocpp_get_configuration(chargepoint_id, keys):
+    message = requests.post("http://localhost:5688/ocpp/getconfiguration/" + chargepoint_id, json={"keys": keys}).json()
     send_task_update(message)
     return message
 
 
 '''
+
+
 @shared_task()
 def dummy_task(param1, param2):
     time.sleep(5)

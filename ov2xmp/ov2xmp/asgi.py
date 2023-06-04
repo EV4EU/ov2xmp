@@ -13,9 +13,10 @@ from django.core.asgi import get_asgi_application
 from channels.routing import ProtocolTypeRouter
 from channels.auth import AuthMiddlewareStack
 from channels.routing import ProtocolTypeRouter, URLRouter
-from django.urls import path
+from django.urls import path, re_path
 from channels.security.websocket import AllowedHostsOriginValidator
 from tasks.TasksConsumer import TasksConsumer
+from dashboard.CSMSConsumer import CSMSConsumer
 
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'ov2xmp.settings')
@@ -30,6 +31,8 @@ application = ProtocolTypeRouter({
         AuthMiddlewareStack(
             URLRouter([
                 path("ws/tasks_updates/", TasksConsumer.as_asgi()),
+                path("ws/csms_updates/", CSMSConsumer.as_asgi()),
+                #re_path(r"csms/*", CSMSConsumer.as_asgi()),
             ])
         )
     ),

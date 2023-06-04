@@ -20,8 +20,13 @@ class OcppResetApiView(GenericAPIView):
 
         serializer = OcppResetSerializer(data=request.data)
         if serializer.is_valid():
-            task = ocpp_reset_task.delay(serializer.data["reset_type"], serializer.data["chargepoint_url_identity"]) # type: ignore
-            return Response({"success": True, "message": "Task has been submitted successfully", "task_id": task.id}, status=status.HTTP_200_OK)
+            if serializer.data["sync"]:
+                task = ocpp_reset_task(serializer.data["reset_type"], serializer.data["chargepoint_id"])
+                task["success"] = True
+                return Response(task, status=status.HTTP_200_OK)
+            else:
+                task = ocpp_reset_task.delay(serializer.data["reset_type"], serializer.data["chargepoint_id"]) # type: ignore
+                return Response({"success": True, "status": "Task has been submitted successfully", "task_id": task.id}, status=status.HTTP_200_OK)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -38,8 +43,13 @@ class OcppRemoteStartTrasactionApiView(GenericAPIView):
 
         serializer = OcppRemoteStartTransactionSerializer(data=request.data)
         if serializer.is_valid():
-            task = ocpp_remote_start_transaction.delay(serializer.data["chargepoint_url_identity"], request.data["connector_id"], request.data["id_tag"], request.data["charging_profile"]) # type: ignore
-            return Response({"success": True, "message": "Task has been submitted successfully", "task_id": task.id}, status=status.HTTP_200_OK)
+            if serializer.data["sync"]:
+                task = ocpp_remote_start_transaction(serializer.data["chargepoint_id"], request.data["connector_id"], request.data["id_tag"], request.data["charging_profile"])
+                task["success"] = True
+                return Response(task, status=status.HTTP_200_OK)
+            else:
+                task = ocpp_remote_start_transaction.delay(serializer.data["chargepoint_id"], request.data["connector_id"], request.data["id_tag"], request.data["charging_profile"]) # type: ignore
+                return Response({"success": True, "status": "Task has been submitted successfully", "task_id": task.id}, status=status.HTTP_200_OK)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -56,7 +66,105 @@ class OcppRemoteStopTrasactionApiView(GenericAPIView):
 
         serializer = OcppRemoteStopTransactionSerializer(data=request.data)
         if serializer.is_valid():
-            task = ocpp_remote_stop_transaction.delay(serializer.data["chargepoint_url_identity"], serializer.data["transaction_id"]) # type: ignore
-            return Response({"success": True, "message": "Task has been submitted successfully", "task_id": task.id}, status=status.HTTP_200_OK)
+            if serializer.data["sync"]:
+                task = ocpp_remote_stop_transaction(serializer.data["chargepoint_id"], serializer.data["transaction_id"])
+                task["success"] = True
+                return Response(task, status=status.HTTP_200_OK)
+            else:
+                task = ocpp_remote_stop_transaction.delay(serializer.data["chargepoint_id"], serializer.data["transaction_id"]) # type: ignore
+                return Response({"success": True, "status": "Task has been submitted successfully", "task_id": task.id}, status=status.HTTP_200_OK)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class OcppReserveNowApiView(GenericAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = OcppReserveNowSerializer
+    schema = AutoSchema(tags=['OCPP'])
+
+    def post(self, request, *args, **kwargs):
+        '''
+        Send a Reserve Now command
+        '''
+
+        serializer = OcppReserveNowSerializer(data=request.data)
+        if serializer.is_valid():
+            if serializer.data["sync"]:
+                task = ocpp_reserve_now(serializer.data["chargepoint_id"], serializer.data["connector_id"], serializer.data["id_tag"], serializer.data["expiry_date"], serializer.data["reservation_id"]) 
+                task["success"] = True
+                return Response(task, status=status.HTTP_200_OK)
+            else:
+                task = ocpp_reserve_now.delay(serializer.data["chargepoint_id"], serializer.data["connector_id"], serializer.data["id_tag"], serializer.data["expiry_date"], serializer.data["reservation_id"]) # type: ignore
+                return Response({"success": True, "status": "Task has been submitted successfully", "task_id": task.id}, status=status.HTTP_200_OK)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class OcppCancelReservationApiView(GenericAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = OcppCancelReservationSerializer
+    schema = AutoSchema(tags=['OCPP'])
+
+    def post(self, request, *args, **kwargs):
+        '''
+        Send a Cancel Reservation command
+        '''
+
+        serializer = OcppCancelReservationSerializer(data=request.data)
+        if serializer.is_valid():
+            if serializer.data["sync"]:
+                task = ocpp_cancel_reservation(serializer.data["chargepoint_id"], serializer.data["reservation_id"])
+                task["success"] = True
+                return Response(task, status=status.HTTP_200_OK)
+            else:
+                task = ocpp_cancel_reservation.delay(serializer.data["chargepoint_id"], serializer.data["reservation_id"]) # type: ignore
+                return Response({"success": True, "status": "Task has been submitted successfully", "task_id": task.id}, status=status.HTTP_200_OK)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class OcppChangeAvailabilityApiView(GenericAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = OcppChangeAvailabilitySerializer
+    schema = AutoSchema(tags=['OCPP'])
+
+    def post(self, request, *args, **kwargs):
+        '''
+        Send a Change Availability command
+        '''
+
+        serializer = OcppChangeAvailabilitySerializer(data=request.data)
+        if serializer.is_valid():
+            if serializer.data["sync"]:
+                task = ocpp_change_availability(serializer.data["chargepoint_id"], serializer.data["connector_id"], serializer.data["type"])
+                task["success"] = True
+                return Response(task, status=status.HTTP_200_OK)
+            else:
+                task = ocpp_change_availability.delay(serializer.data["chargepoint_id"], serializer.data["connector_id"], serializer.data["type"]) # type: ignore
+                return Response({"success": True, "status": "Task has been submitted successfully", "task_id": task.id}, status=status.HTTP_200_OK)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+class OcppGetConfigurationApiView(GenericAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = OcppGetConfigurationSerializer
+    schema = AutoSchema(tags=['OCPP'])
+
+    def post(self, request, *args, **kwargs):
+        '''
+        Send a Get Configuration command
+        '''
+
+        serializer = OcppGetConfigurationSerializer(data=request.data)
+        if serializer.is_valid():
+            if serializer.data["sync"]:
+                task = ocpp_get_configuration.delay(serializer.data["chargepoint_id"], serializer.data["keys"])
+                task["success"] = True
+                return Response(task, status=status.HTTP_200_OK)
+            else:
+                task = ocpp_get_configuration.delay(serializer.data["chargepoint_id"], serializer.data["keys"]) # type: ignore
+                return Response({"success": True, "status": "Task has been submitted successfully", "task_id": task.id}, status=status.HTTP_200_OK)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

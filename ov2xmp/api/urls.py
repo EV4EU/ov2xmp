@@ -8,9 +8,11 @@ from django.views.generic import TemplateView
 from chargepoint.views import ChargepointApiView, ChargepointDetailApiView
 from idtag.views import IdtagApiView, IdtagDetailApiView
 from .views import *
+from tasks.views import TasksApiView, TasksDetailApiView
 
 from rest_framework.schemas import get_schema_view
 from django.views.generic import TemplateView
+
 
 urlpatterns = [
 
@@ -26,11 +28,19 @@ urlpatterns = [
     ), name='openapi-schema'),
 
     path('chargepoint/', ChargepointApiView.as_view()),
-    path('chargepoint/<str:chargepoint_url_identity>/', ChargepointDetailApiView.as_view()),
+    path('chargepoint/<str:chargepoint_id>/', ChargepointDetailApiView.as_view()),
 
     path('idtag/', IdtagApiView.as_view()),
     path('idtag/<str:id_token>/', IdtagDetailApiView.as_view()),
 
+    path('task/', TasksApiView.as_view()),
+    path('task/<str:task_id>/', TasksDetailApiView.as_view()),
+
     path('ocpp/reset/', OcppResetApiView.as_view()),
-    path('ocpp/remotestarttransaction', OcppRemoteStartTrasactionApiView.as_view())
+    path('ocpp/remotestarttransaction', OcppRemoteStartTrasactionApiView.as_view()),
+    path('ocpp/reservenow', OcppReserveNowApiView.as_view()),
+    path('ocpp/cancelreservation', OcppCancelReservationApiView.as_view()),
+    path('ocpp/changeavailaility', OcppChangeAvailabilityApiView.as_view()),
+    path('ocpp/getconfiguration', OcppGetConfigurationApiView.as_view())
+
 ]

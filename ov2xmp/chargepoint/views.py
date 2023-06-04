@@ -8,10 +8,6 @@ from .serializers import ChargepointSerializer
 from rest_framework.schemas.openapi import AutoSchema
 
 
-####################################################################################
-########################## OCPP API Views ##########################################
-####################################################################################
-
 class ChargepointApiView(GenericAPIView):
     # add permission to check if user is authenticated
     permission_classes = [permissions.IsAuthenticated]
@@ -35,7 +31,7 @@ class ChargepointApiView(GenericAPIView):
         '''
 
         data = {
-            'chargepoint_url_identity': request.data.get('chargepoint_url_identity'), 
+            'chargepoint_id': request.data.get('chargepoint_id'), 
             'chargepoint_serial_number': request.data.get('chargepoint_serial_number'), 
             'chargepoint_model': request.data.get('chargepoint_model'),
             'chargepoint_vendor': request.data.get('chargepoint_vendor'),
@@ -57,20 +53,20 @@ class ChargepointDetailApiView(GenericAPIView):
     serializer_class = ChargepointSerializer
     schema = AutoSchema(tags=['Chargepoint'])
 
-    def get_object(self, chargepoint_url_identity):        
+    def get_object(self, chargepoint_id):        
         # Helper method to get the object with given todo_id, and user_id
 
         try:
-            return Chargepoint.objects.get(pk=chargepoint_url_identity)
+            return Chargepoint.objects.get(pk=chargepoint_id)
         except Chargepoint.DoesNotExist:
             return None
 
     # 3. Retrieve
-    def get(self, request, chargepoint_url_identity, *args, **kwargs):
+    def get(self, request, chargepoint_id, *args, **kwargs):
         '''
-        Retrieves the Chargepoint with given chargepoint_url_identity
+        Retrieves the Chargepoint with given chargepoint_id
         '''
-        chargepoint_instance = self.get_object(chargepoint_url_identity=chargepoint_url_identity)
+        chargepoint_instance = self.get_object(chargepoint_id=chargepoint_id)
         if not chargepoint_instance:
             return Response(
                 {"res": "Object with todo id does not exists"},
@@ -81,18 +77,18 @@ class ChargepointDetailApiView(GenericAPIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     # 4. Update
-    def put(self, request, chargepoint_url_identity, *args, **kwargs):
+    def put(self, request, chargepoint_id, *args, **kwargs):
         '''
-        Updates the Chargepoint item with given chargepoint_url_identity, if exists
+        Updates the Chargepoint item with given chargepoint_id, if exists
         '''
-        chargepoint_instance = self.get_object(chargepoint_url_identity)
+        chargepoint_instance = self.get_object(chargepoint_id)
         if not chargepoint_instance:
             return Response(
                 {"res": "Object with todo id does not exists"}, 
                 status=status.HTTP_400_BAD_REQUEST
             )
         data = {
-            'chargepoint_url_identity': request.data.get('chargepoint_url_identity'), 
+            'chargepoint_id': request.data.get('chargepoint_id'), 
             'chargepoint_serial_number': request.data.get('chargepoint_serial_number'), 
             'chargepoint_model': request.data.get('chargepoint_model'),
             'chargepoint_vendor': request.data.get('chargepoint_vendor'),
@@ -106,11 +102,11 @@ class ChargepointDetailApiView(GenericAPIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     # 5. Delete
-    def delete(self, request, chargepoint_url_identity, *args, **kwargs):
+    def delete(self, request, chargepoint_id, *args, **kwargs):
         '''
-        Deletes the Chargepoint item with given chargepoint_url_identity, if exists
+        Deletes the Chargepoint item with given chargepoint_id, if exists
         '''
-        chargepoint_instance = self.get_object(chargepoint_url_identity)
+        chargepoint_instance = self.get_object(chargepoint_id)
         if not chargepoint_instance:
             return Response(
                 {"res": "Object with todo id does not exists"}, 
