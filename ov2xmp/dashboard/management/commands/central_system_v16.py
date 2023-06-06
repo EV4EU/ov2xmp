@@ -7,11 +7,13 @@ from asgiref.sync import sync_to_async
 from websockets.typing import Subprotocol
 import uuid 
 from django.db import DatabaseError
+from django.db.models import Max
 from django.utils import timezone
 
 from chargepoint.models import Chargepoint as ChargepointModel
 from idtag.models import IdTag as idTagModel
 from transaction.models import Transaction as TransactionModel
+from transaction.models import TransactionStatus
 from connector.models import Connector as ConnectorModel
 from reservation.models import Reservation as ReservationModel
 
@@ -118,18 +120,25 @@ class ChargePoint(cp):
         result = authorize_idTag(id_tag)
         return call_result.AuthorizePayload(id_tag_info=result["status"])
 
-    
+
     @on(ocpp_v16_enums.Action.StartTransaction)
-    def on_startTransaction(self, connector_id, id_tag, meter_start, timestamp):
-        
+    def on_startTransaction(self, connector_id, id_tag, meter_start, timestamp, reservation_id):
+
         new_transaction = TransactionModel.objects.create(
             start_transaction_timestamp = timestamp,
             wh_meter_start = meter_start,
-            id_tag = idTagModel.objects.get(idToken=id_tag)
         )
         new_transaction.save()
 
         result = authorize_idTag(id_tag)
+        
+        if result["status"] == ocpp_v16_enums.AuthorizationStatus.accepted:
+            new_transaction.id_tag = idTagModel.objects.get(idToken=id_tag)
+            ReservationModel.objects.filter(connector__chargepoint__chargepoint_id = self.id, reservation_id=reservation_id).delete()
+            new_transaction.status = TransactionStatus.started
+        else:
+            new_transaction.status = TransactionStatus.unauthorized
+        
         return call_result.StartTransactionPayload(
             transaction_id = new_transaction.transaction_id,
             id_tag_info = {
@@ -210,17 +219,8 @@ class ChargePoint(cp):
 
         if reservation_id is None:
             # If reservation_id is not provided, we need to find the maximum reservation_id that exists for the particular EVCS
-            reservation_ids = []
-            # Get all connectors of the specific EVCS
-            connectors = ConnectorModel.objects.filter(chargepoint__chargepoint_id=self.id)
-            for connector in connectors:
-                # For each connector, get all the relevant reservations
-                _reservations = ReservationModel.objects.filter(connector__uuid = connector.uuid)
-                # For each reservation of the particular connector, collect the reservation_id
-                for _reservation in _reservations:
-                    reservation_ids.append(_reservation.reservation_id)
-            # Find the maximum reservation_id and increase it by 1 (so we do not replace any existing reservation_id on the particular EVCS)
-            reservation_id = max(reservation_ids) + 1
+            # Get all reservations of the specific EVCS and find the max reservation_id value. then, add +1 (so we do not replace any existing reservation_id on the particular EVCS)
+            reservation_id = ReservationModel.objects.filter(connector__chargepoint__chargepoint_id=self.id).aggregate(Max('reservation_id'))["reservation_id__max"] + 1
             
         request = call.ReserveNowPayload(
             connector_id=connector_id,
@@ -243,7 +243,7 @@ class ChargePoint(cp):
         else:
             return {"status": None}
 
-    # TODO: Cancel reservation when a transaction starts
+
     async def cancel_reservation(self, reservation_id):
         request = call.CancelReservationPayload(
             reservation_id=reservation_id
@@ -258,10 +258,10 @@ class ChargePoint(cp):
             return {"status": None}
         
 
-    async def change_availability(self, connector_id, type):
+    async def change_availability(self, connector_id, availability_type):
         request = call.ChangeAvailabilityPayload(
             connector_id=connector_id,
-            type=type
+            type=availability_type
         )
         response = await self.call(request)
         if response is not None:
@@ -269,7 +269,7 @@ class ChargePoint(cp):
         else:
             return {"status": None}
 
-    # TODO: REST API interface
+
     async def change_configuration(self, key, value):
         request = call.ChangeConfigurationPayload(
             key=key,
@@ -281,7 +281,7 @@ class ChargePoint(cp):
         else:
             return {"status": None}
     
-    # TODO: REST API interface
+
     async def clear_cache(self):
         request = call.ClearCachePayload()
         response = await self.call(request)
@@ -290,7 +290,7 @@ class ChargePoint(cp):
         else:
             return {"status": None}
     
-    # TODO: REST API interface
+
     async def unlock_connector(self, connector_id):
         request = call.UnlockConnectorPayload(
             connector_id=connector_id
@@ -317,7 +317,7 @@ class ChargePoint(cp):
 ##################### CSMS REST API ######################################################################################
 ##########################################################################################################################
 
-# hardReset and softReset
+# Reset (hard or soft)
 @app.route("/ocpp/reset/<resetType>/<chargepoint_id>")
 async def reset(resetType, chargepoint_id):
     if chargepoint_id in CHARGEPOINTS_V16:
@@ -330,10 +330,10 @@ async def reset(resetType, chargepoint_id):
 # Remote Start Transaction  
 @app.route("/ocpp/remotestarttransaction/<chargepoint_id>", methods=["POST"])
 async def remote_start_transaction(chargepoint_id):
-    if chargepoint_id in CHARGEPOINTS_V16:
-        connector_id = request.form.get('connector_id')
-        id_tag = request.form.get('id_tag')
-        charging_profile = request.form.get('charging_profile', None)
+    if chargepoint_id in CHARGEPOINTS_V16 and request.json is not None:
+        connector_id = request.json['connector_id']
+        id_tag = request.json['id_tag']
+        charging_profile = request.json['charging_profile']
         result = await CHARGEPOINTS_V16[chargepoint_id].remote_start_transaction(id_tag, connector_id, charging_profile)
         return jsonify(result)
     else:
@@ -343,8 +343,8 @@ async def remote_start_transaction(chargepoint_id):
 # Remote Stop Transaction  
 @app.route("/ocpp/remotestoptransaction/<chargepoint_id>", methods=["POST"])
 async def remote_stop_transaction(chargepoint_id):
-    if chargepoint_id in CHARGEPOINTS_V16:
-        transaction_id = request.form.get('transaction_id')
+    if chargepoint_id in CHARGEPOINTS_V16 and request.json is not None:
+        transaction_id = request.json['transaction_id']
         result = await CHARGEPOINTS_V16[chargepoint_id].remote_stop_transaction(transaction_id)
         return jsonify(result)
     else:
@@ -354,7 +354,7 @@ async def remote_stop_transaction(chargepoint_id):
 # Reserve Now
 @app.route("/ocpp/reservenow/<chargepoint_id>", methods=["POST"])
 async def reserve_now(chargepoint_id):
-    if chargepoint_id in CHARGEPOINTS_V16:
+    if chargepoint_id in CHARGEPOINTS_V16 and request.json is not None:
         connector_id = request.json['connector_id']
         id_tag = request.json['id_tag']
         expiry_date = request.json['expiry_date']
@@ -368,8 +368,8 @@ async def reserve_now(chargepoint_id):
 # Cancel Reservation
 @app.route("/ocpp/cancelreservation/<chargepoint_id>", methods=["POST"])
 async def cancel_reservation(chargepoint_id):
-    if chargepoint_id in CHARGEPOINTS_V16:
-        reservation_id = request.form.get('reservation_id')
+    if chargepoint_id in CHARGEPOINTS_V16 and request.json is not None:
+        reservation_id = request.json['reservation_id']
         result = await CHARGEPOINTS_V16[chargepoint_id].cancel_reservation(reservation_id)
         return jsonify(result)
     else:
@@ -379,10 +379,42 @@ async def cancel_reservation(chargepoint_id):
 # Change Availability
 @app.route("/ocpp/changeavailability/<chargepoint_id>", methods=["POST"])
 async def change_availability(chargepoint_id):
+    if chargepoint_id in CHARGEPOINTS_V16 and request.json is not None:
+        connector_id = request.json['connector_id']
+        availability_type = request.json['type']
+        result = await CHARGEPOINTS_V16[chargepoint_id].change_availability(connector_id, availability_type)
+        return jsonify(result)
+    else:
+        return jsonify({"status": "Charge Point does not exist"})
+
+# Change Configuration
+@app.route("/ocpp/changeconfiguration/<chargepoint_id>", methods=["POST"])
+async def change_configuration(chargepoint_id):
+    if chargepoint_id in CHARGEPOINTS_V16 and request.json is not None:
+        key = request.json['key']
+        value = request.json['value']
+        result = await CHARGEPOINTS_V16[chargepoint_id].change_configuration(key, value)
+        return jsonify(result)
+    else:
+        return jsonify({"status": "Charge Point does not exist"})
+
+
+# Clear Cache
+@app.route("/ocpp/clearcache/<chargepoint_id>", methods=["POST"])
+async def clear_cache(chargepoint_id):
     if chargepoint_id in CHARGEPOINTS_V16:
-        connector_id = request.form.get('connector_id')
-        type = request.form.get('type')
-        result = await CHARGEPOINTS_V16[chargepoint_id].change_availability(connector_id, type)
+        result = await CHARGEPOINTS_V16[chargepoint_id].clear_cache()
+        return jsonify(result)
+    else:
+        return jsonify({"status": "Charge Point does not exist"})
+
+
+# Unlock Connector
+@app.route("/ocpp/unlockconnector/<chargepoint_id>", methods=["POST"])
+async def unlock_connector(chargepoint_id):
+    if chargepoint_id in CHARGEPOINTS_V16 and request.json is not None:
+        connector_id = request.json['connector_id']
+        result = await CHARGEPOINTS_V16[chargepoint_id].unlock_connector(connector_id)
         return jsonify(result)
     else:
         return jsonify({"status": "Charge Point does not exist"})
@@ -391,8 +423,8 @@ async def change_availability(chargepoint_id):
 # Get Configuration
 @app.route("/ocpp/getconfiguration/<chargepoint_id>", methods=["POST"])
 async def get_configuration(chargepoint_id):
-    if chargepoint_id in CHARGEPOINTS_V16:
-        keys = request.form.get('keys')
+    if chargepoint_id in CHARGEPOINTS_V16 and request.json is not None:
+        keys = request.json['keys']
         result = await CHARGEPOINTS_V16[chargepoint_id].get_configuration(keys)
         return jsonify(result)
     else:

@@ -57,8 +57,29 @@ def ocpp_cancel_reservation(chargepoint_id, reservation_id):
 
 
 @shared_task()
-def ocpp_change_availability(chargepoint_id, reservation_id):
-    message = requests.post("http://localhost:5688/ocpp/cancelreservation/" + chargepoint_id, json={"reservation_id": reservation_id}).json()
+def ocpp_change_availability(chargepoint_id, connector_id, availability_type):
+    message = requests.post("http://localhost:5688/ocpp/changeavailability/" + chargepoint_id, json={"connector_id": connector_id, "type": availability_type}).json()
+    send_task_update(message)
+    return message
+
+
+@shared_task()
+def ocpp_change_configuration(chargepoint_id, key, value):
+    message = requests.post("http://localhost:5688/ocpp/changeconfiguration/" + chargepoint_id, json={"key": key, "value": value}).json()
+    send_task_update(message)
+    return message
+
+
+@shared_task()
+def ocpp_clear_cache(chargepoint_id):
+    message = requests.post("http://localhost:5688/ocpp/clearcache/" + chargepoint_id).json()
+    send_task_update(message)
+    return message
+
+
+@shared_task()
+def ocpp_unlock_connector(chargepoint_id, connector_id):
+    message = requests.post("http://localhost:5688/ocpp/unlockconnector/" + chargepoint_id, json={"connector_id": connector_id}).json()
     send_task_update(message)
     return message
 

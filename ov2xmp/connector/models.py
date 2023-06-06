@@ -8,3 +8,6 @@ class Connector(models.Model):
     connectorid = models.IntegerField()
     availability_status = models.CharField(max_length=20)
     chargepoint = models.ForeignKey(Chargepoint, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return "Connector " + str(self.connectorid) + " of " + self.chargepoint.chargepoint_id

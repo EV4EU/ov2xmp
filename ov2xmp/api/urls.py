@@ -41,6 +41,9 @@ urlpatterns = [
     path('ocpp/reservenow', OcppReserveNowApiView.as_view()),
     path('ocpp/cancelreservation', OcppCancelReservationApiView.as_view()),
     path('ocpp/changeavailaility', OcppChangeAvailabilityApiView.as_view()),
+    path('ocpp/changeconfiguration', OcppChangeConfigurationApiView.as_view()),
+    path('ocpp/clearcache', OcppClearCacheApiView.as_view()),
+    path('ocpp/unlockconnector', OcppUnlockConnectorApiView.as_view()),
     path('ocpp/getconfiguration', OcppGetConfigurationApiView.as_view())
 
 ]

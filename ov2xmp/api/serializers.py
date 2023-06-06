@@ -35,7 +35,17 @@ class OcppCancelReservationSerializer(OcppCommandSerializer):
 
 class OcppChangeAvailabilitySerializer(OcppCommandSerializer):
     connector_id = serializers.IntegerField()
-    type = serializers.ChoiceField(choices=tuple(member.value for member in ocppv16_enums.AvailabilityType))
+    availability_type = serializers.ChoiceField(choices=tuple(member.value for member in ocppv16_enums.AvailabilityType))
+
+
+class OcppChangeConfigurationSerializer(OcppCommandSerializer):
+    key = serializers.CharField(max_length=50)
+    value = serializers.CharField(max_length=500)
+
+#class OcppClearCache(OcppCommandSerializer):
+
+class OcppUnlockConnectorSerializer(OcppCommandSerializer):
+    connector_id = serializers.IntegerField()
 
 
 class OcppGetConfigurationSerializer(OcppCommandSerializer):
