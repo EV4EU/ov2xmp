@@ -21,11 +21,11 @@ class OcppResetApiView(GenericAPIView):
         serializer = OcppResetSerializer(data=request.data)
         if serializer.is_valid():
             if serializer.data["sync"]:
-                task = ocpp_reset_task(serializer.data["reset_type"], serializer.data["chargepoint_id"])
+                task = ocpp_reset_task(serializer.data["chargepoint_id"], serializer.data["reset_type"])
                 task["success"] = True
                 return Response(task, status=status.HTTP_200_OK)
             else:
-                task = ocpp_reset_task.delay(serializer.data["reset_type"], serializer.data["chargepoint_id"]) # type: ignore
+                task = ocpp_reset_task.delay(serializer.data["chargepoint_id"], serializer.data["reset_type"]) # type: ignore
                 return Response({"success": True, "status": "Task has been submitted successfully", "task_id": task.id}, status=status.HTTP_200_OK)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -228,7 +228,7 @@ class OcppGetConfigurationApiView(GenericAPIView):
         serializer = OcppGetConfigurationSerializer(data=request.data)
         if serializer.is_valid():
             if serializer.data["sync"]:
-                task = ocpp_get_configuration.delay(serializer.data["chargepoint_id"], serializer.data["keys"])
+                task = ocpp_get_configuration(serializer.data["chargepoint_id"], serializer.data["keys"])
                 task["success"] = True
                 return Response(task, status=status.HTTP_200_OK)
             else:

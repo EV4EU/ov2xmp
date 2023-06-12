@@ -147,6 +147,7 @@
         ws_protocol = 'ws://';
     
     let tasksWebSocket = new WebSocket(ws_protocol + window.location.host + '/ws/tasks_updates/');
+    let meterValuesSocket = new WebSocket(ws_protocol + window.location.host + '/ws/metervalues_updates/');
 
     tasksWebSocket.onmessage = function (e) {
         console.log(e);
@@ -154,6 +155,11 @@
         console.log(taskUpdate);
     }
 
+    meterValuesSocket.onmessage = function (e) {
+        console.log(e);
+        let taskUpdate = JSON.parse(JSON.parse(e.data).message);
+        console.log(taskUpdate);
+    }
 
 
 

@@ -22,8 +22,8 @@ def send_task_update(message):
 
 
 @shared_task()
-def ocpp_reset_task(reset_type, chargepoint_id):
-    message = requests.get("http://localhost:5688/ocpp/reset/" + reset_type + "/" + chargepoint_id).json()
+def ocpp_reset_task(chargepoint_id, reset_type):
+    message = requests.post("http://localhost:5688/ocpp/reset/" + chargepoint_id, json={"reset_type": reset_type}).json()
     send_task_update(message)
     return message
 

@@ -22,14 +22,19 @@ from ocpp.v16 import ChargePoint as cp
 from ocpp.v16 import call_result, call
 import ocpp.v16.enums as ocpp_v16_enums
 
-ocpp_v16_enums.AuthorizationStatus._value_
-
-import redis
+import json
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 
 from flask import Flask, jsonify, request
 import threading
+
+channel_layer = get_channel_layer()
+
+async def broadcast_metervalues(message):
+    message = json.dumps(message)
+    if channel_layer is not None:
+        await channel_layer.group_send("metervalues_updates", {"type": "websocket.send", "text": message})
 
 
 logging.basicConfig(level=logging.INFO)
@@ -118,15 +123,16 @@ class ChargePoint(cp):
     @on(ocpp_v16_enums.Action.Authorize)
     def on_authorize(self, id_tag):
         result = authorize_idTag(id_tag)
-        return call_result.AuthorizePayload(id_tag_info=result["status"])
+        return call_result.AuthorizePayload(id_tag_info=result["status"]) # type: ignore
 
 
     @on(ocpp_v16_enums.Action.StartTransaction)
-    def on_startTransaction(self, connector_id, id_tag, meter_start, timestamp, reservation_id):
+    def on_startTransaction(self, connector_id, id_tag, meter_start, timestamp, **kwargs):
 
         new_transaction = TransactionModel.objects.create(
             start_transaction_timestamp = timestamp,
             wh_meter_start = meter_start,
+            wh_meter_last = meter_start
         )
         new_transaction.save()
 
@@ -134,10 +140,17 @@ class ChargePoint(cp):
         
         if result["status"] == ocpp_v16_enums.AuthorizationStatus.accepted:
             new_transaction.id_tag = idTagModel.objects.get(idToken=id_tag)
-            ReservationModel.objects.filter(connector__chargepoint__chargepoint_id = self.id, reservation_id=reservation_id).delete()
+            reservation_id = kwargs.get('reservation_id', None)
+            if reservation_id is not None:
+                ReservationModel.objects.filter(connector__chargepoint__chargepoint_id = self.id, reservation_id=reservation_id).delete()
             new_transaction.status = TransactionStatus.started
         else:
+            new_transaction.stop_transaction_timestamp = timezone.now()
+            new_transaction.wh_meter_stop = meter_start
+            new_transaction.reason_stopped = TransactionStatus.unauthorized
             new_transaction.status = TransactionStatus.unauthorized
+        
+        new_transaction.save()
         
         return call_result.StartTransactionPayload(
             transaction_id = new_transaction.transaction_id,
@@ -148,26 +161,40 @@ class ChargePoint(cp):
 
 
     @on(ocpp_v16_enums.Action.MeterValues)
-    def on_meterValues(self, **kwargs):
+    async def on_meterValues(self, connector_id, meter_value, **kwargs):
         transaction_id = kwargs.get('transaction_id', None)
-        meter_values = kwargs.get('meter_value', None)
-        connector_id = kwargs.get('connector_id', None)
 
-        logging.info("MeterValue received: {Transaction ID: " + str(transaction_id) + ", Connector ID: " + str(connector_id))
-        logging.info(meter_values)
+        #try:
+        #    if transaction_id is not None:
+        #        current_transaction = TransactionModel.objects.filter(transaction_id=transaction_id).update(wh_meter_last = )
+        #        #Update current_transaction.wh_meter_last with the meterValue
+        #except Exception as e:
+        #    pass
+
+        # {"connector_id":1,"transaction_id":4,"meterValue":[{"timestamp":"2023-06-07T11:42:50.849Z","sampledValue":[{"unit":"Percent","context":"Sample.Periodic","measurand":"SoC","location":"EV","value":"74"},{"unit":"V","context":"Sample.Periodic","measurand":"Voltage","value":"384.05"},{"unit":"W","context":"Sample.Periodic","measurand":"Power.Active.Import","value":"30749.76"},{"unit":"A","context":"Sample.Periodic","measurand":"Current.Import","value":"121.39"},{"unit":"Wh","context":"Sample.Periodic","value":"649.94"}]}]}]
+        message = {
+            "transaction_id": transaction_id,
+            "connector_id": connector_id, 
+            "meterValue": meter_value
+        }
+
+        await broadcast_metervalues(message)
 
         return call_result.MeterValuesPayload()
 
 
     @on(ocpp_v16_enums.Action.StopTransaction)
-    def on_stopTransaction(self, meter_stop, timestamp, transaction_id, reason, id_tag, transaction_data):
+    def on_stopTransaction(self, meter_stop, timestamp, transaction_id, **kwargs): #reason, id_tag, transaction_data):
         
         try:
             current_transaction = TransactionModel.objects.get(transaction_id=transaction_id)
 
             current_transaction.stop_transaction_timestamp = timestamp
             current_transaction.wh_meter_stop = meter_stop
-            current_transaction.reason_stopped = reason
+            current_transaction.status = TransactionStatus.finished
+            reason = kwargs.get('reason', None)
+            if reason is not None:
+                current_transaction.reason_stopped = reason
 
             current_transaction.save()
 
@@ -182,15 +209,16 @@ class ChargePoint(cp):
     #################### ACTIONS INITIATED BY THE CSMS #######################################################################
     ##########################################################################################################################
 
-    async def reset(self, type):
-        request = call.ResetPayload(type = type)
+    # Reset
+    async def reset(self, reset_type):
+        request = call.ResetPayload(type = reset_type)
         response = await self.call(request)
         if response is not None:
             return {"status": response.status}
         else:
             return {"status": None}
 
-    
+    # RemoteStartTransaction
     async def remote_start_transaction(self, id_tag, connector_id, charging_profile):
         request = call.RemoteStartTransactionPayload(
             connector_id=connector_id,
@@ -203,7 +231,7 @@ class ChargePoint(cp):
         else:
             return {"status": None}
         
-
+    # RemoteStopTransaction
     async def remote_stop_transaction(self, transaction_id):
         request = call.RemoteStopTransactionPayload(
             transaction_id=transaction_id
@@ -214,7 +242,7 @@ class ChargePoint(cp):
         else:
             return {"status": None}
     
-
+    # ReserveNow
     async def reserve_now(self, connector_id, id_tag, expiry_date, reservation_id):
 
         if reservation_id is None:
@@ -243,7 +271,7 @@ class ChargePoint(cp):
         else:
             return {"status": None}
 
-
+    # CancelReservation
     async def cancel_reservation(self, reservation_id):
         request = call.CancelReservationPayload(
             reservation_id=reservation_id
@@ -257,7 +285,7 @@ class ChargePoint(cp):
         else:
             return {"status": None}
         
-
+    # ChangeAvailability
     async def change_availability(self, connector_id, availability_type):
         request = call.ChangeAvailabilityPayload(
             connector_id=connector_id,
@@ -269,7 +297,7 @@ class ChargePoint(cp):
         else:
             return {"status": None}
 
-
+    # ChangeConfiguration
     async def change_configuration(self, key, value):
         request = call.ChangeConfigurationPayload(
             key=key,
@@ -281,7 +309,7 @@ class ChargePoint(cp):
         else:
             return {"status": None}
     
-
+    # ClearCache
     async def clear_cache(self):
         request = call.ClearCachePayload()
         response = await self.call(request)
@@ -290,7 +318,7 @@ class ChargePoint(cp):
         else:
             return {"status": None}
     
-
+    # UnlockConnector
     async def unlock_connector(self, connector_id):
         request = call.UnlockConnectorPayload(
             connector_id=connector_id
@@ -301,7 +329,7 @@ class ChargePoint(cp):
         else:
             return {"status": None}
 
-
+    # GetConfiguration
     async def get_configuration(self, keys):
         request = call.GetConfigurationPayload(
             key=keys
@@ -318,16 +346,17 @@ class ChargePoint(cp):
 ##########################################################################################################################
 
 # Reset (hard or soft)
-@app.route("/ocpp/reset/<resetType>/<chargepoint_id>")
-async def reset(resetType, chargepoint_id):
-    if chargepoint_id in CHARGEPOINTS_V16:
+@app.route("/ocpp/reset/<chargepoint_id>", methods=["POST"])
+async def reset(chargepoint_id):
+    if chargepoint_id in CHARGEPOINTS_V16 and request.json is not None:
+        resetType = request.json["reset_type"]
         result = await CHARGEPOINTS_V16[chargepoint_id].reset(resetType)
         return jsonify(result)
     else:
         return jsonify({"status": "Charge Point does not exist"})
 
 
-# Remote Start Transaction  
+# RemoteStartTransaction  
 @app.route("/ocpp/remotestarttransaction/<chargepoint_id>", methods=["POST"])
 async def remote_start_transaction(chargepoint_id):
     if chargepoint_id in CHARGEPOINTS_V16 and request.json is not None:
@@ -340,7 +369,7 @@ async def remote_start_transaction(chargepoint_id):
         return jsonify({"status": "Charge Point does not exist"})
 
 
-# Remote Stop Transaction  
+# RemoteStopTransaction  
 @app.route("/ocpp/remotestoptransaction/<chargepoint_id>", methods=["POST"])
 async def remote_stop_transaction(chargepoint_id):
     if chargepoint_id in CHARGEPOINTS_V16 and request.json is not None:
@@ -351,7 +380,7 @@ async def remote_stop_transaction(chargepoint_id):
         return jsonify({"status": "Charge Point does not exist"})
 
 
-# Reserve Now
+# ReserveNow
 @app.route("/ocpp/reservenow/<chargepoint_id>", methods=["POST"])
 async def reserve_now(chargepoint_id):
     if chargepoint_id in CHARGEPOINTS_V16 and request.json is not None:
@@ -365,7 +394,7 @@ async def reserve_now(chargepoint_id):
         return jsonify({"status": "Charge Point does not exist"})
 
 
-# Cancel Reservation
+# CancelReservation
 @app.route("/ocpp/cancelreservation/<chargepoint_id>", methods=["POST"])
 async def cancel_reservation(chargepoint_id):
     if chargepoint_id in CHARGEPOINTS_V16 and request.json is not None:
@@ -376,7 +405,7 @@ async def cancel_reservation(chargepoint_id):
         return jsonify({"status": "Charge Point does not exist"})
 
 
-# Change Availability
+# ChangeAvailability
 @app.route("/ocpp/changeavailability/<chargepoint_id>", methods=["POST"])
 async def change_availability(chargepoint_id):
     if chargepoint_id in CHARGEPOINTS_V16 and request.json is not None:
@@ -387,7 +416,7 @@ async def change_availability(chargepoint_id):
     else:
         return jsonify({"status": "Charge Point does not exist"})
 
-# Change Configuration
+# ChangeConfiguration
 @app.route("/ocpp/changeconfiguration/<chargepoint_id>", methods=["POST"])
 async def change_configuration(chargepoint_id):
     if chargepoint_id in CHARGEPOINTS_V16 and request.json is not None:
@@ -399,7 +428,7 @@ async def change_configuration(chargepoint_id):
         return jsonify({"status": "Charge Point does not exist"})
 
 
-# Clear Cache
+# ClearCache
 @app.route("/ocpp/clearcache/<chargepoint_id>", methods=["POST"])
 async def clear_cache(chargepoint_id):
     if chargepoint_id in CHARGEPOINTS_V16:
@@ -409,7 +438,7 @@ async def clear_cache(chargepoint_id):
         return jsonify({"status": "Charge Point does not exist"})
 
 
-# Unlock Connector
+# UnlockConnector
 @app.route("/ocpp/unlockconnector/<chargepoint_id>", methods=["POST"])
 async def unlock_connector(chargepoint_id):
     if chargepoint_id in CHARGEPOINTS_V16 and request.json is not None:
@@ -420,7 +449,7 @@ async def unlock_connector(chargepoint_id):
         return jsonify({"status": "Charge Point does not exist"})
 
 
-# Get Configuration
+# GetConfiguration
 @app.route("/ocpp/getconfiguration/<chargepoint_id>", methods=["POST"])
 async def get_configuration(chargepoint_id):
     if chargepoint_id in CHARGEPOINTS_V16 and request.json is not None:
