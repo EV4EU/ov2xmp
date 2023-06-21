@@ -4,7 +4,7 @@ from ocpp.v16 import ChargePoint as cp
 from ocpp.v16 import call_result, call, enums
 #from ocpp.v16.enums import Action, RegistrationStatus
 import ocpp.v16.enums as ocpp_v16_enums
-from dashboard.management.commands.central_system_v16 import ChargePoint
+from ov2xmp.dashboard.management.commands.csms import ChargePoint
 from asgiref.sync import sync_to_async
 from chargepoint.models import Chargepoint as ChargepointModel
 from datetime import datetime

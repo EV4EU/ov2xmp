@@ -54,13 +54,13 @@
 8. Open a new tmux session by issuing the `tmux` command. Inside the new tmux session, activate the environment, and start the OCPP websocket server
 
     ```sh
-    (venv) $ python manage.py central_system_v16
+    (venv) $ python manage.py csms
     ```
 
     Alternatively, if you need to record the CSMS logs to a file, issue the following instead:
 
     ```sh
-    (venv) $ python manage.py central_system_v16 2>&1 | tee central_system_output-2.log
+    (venv) $ python manage.py csms 2>&1 | tee central_system_output-2.log
     ```
 
 9. Open a new tmux session by issuing the `tmux` command, and start the Celery worker:
@@ -132,6 +132,12 @@ ov2xmp -> user : Task status
 deactivate user
 @enduml
 ```
+
+## O-V2X-MP REST API
+
+To access the Swagger page of the O-V2X-MP REST API, visit the following page:
+
+`http://ov2xmp.trsc.net:8000/api`
 
 ## How to develop REST API endpoints for OCPP commands
 
