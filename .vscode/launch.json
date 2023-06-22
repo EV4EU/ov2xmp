@@ -17,12 +17,12 @@
             "justMyCode": true
         },
         {
-            "name": "OCPP Central System v1.6-J",
+            "name": "OCPP Central System",
             "type": "python",
             "request": "launch",
             "program": "${workspaceFolder}/ov2xmp/manage.py",
             "args": [
-                "central_system_v16"
+                "csms"
             ],
             "django": true,
             "justMyCode": true

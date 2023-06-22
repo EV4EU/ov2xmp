@@ -1,7 +1,8 @@
 from ocpp.routing import on
-from ocpp.v16 import ChargePoint as cp
-from ocpp.v16 import call_result, call
-import ocpp.v16.enums as ocpp_v16_enums
+from ocpp.v201 import ChargePoint as cp
+from ocpp.v201 import call_result, call
+import ocpp.v201.enums as ocpp_enums
+from ocpp.v201.enums import Action
 
 from chargepoint.models import Chargepoint as ChargepointModel
 from idtag.models import IdTag as idTagModel
@@ -34,24 +35,24 @@ def authorize_idTag(id_token):
             if not idTag_object.revoked:
                 if idTag_object.expiry_date is not None:
                     if idTag_object.expiry_date.timestamp() > datetime.utcnow().timestamp():
-                        return {"status": ocpp_v16_enums.AuthorizationStatus.accepted}
+                        return {"status": ocpp_enums.AuthorizationStatus.accepted}
                     else:
-                        return {"status": ocpp_v16_enums.AuthorizationStatus.expired}
+                        return {"status": ocpp_enums.AuthorizationStatus.expired}
                 else:
-                    return {"status": ocpp_v16_enums.AuthorizationStatus.accepted}
+                    return {"status": ocpp_enums.AuthorizationStatus.accepted}
             else:
-                return {"status": ocpp_v16_enums.AuthorizationStatus.blocked}
+                return {"status": ocpp_enums.AuthorizationStatus.blocked}
         except idTagModel.DoesNotExist:
-            return {"status": ocpp_v16_enums.AuthorizationStatus.invalid}
+            return {"status": ocpp_enums.AuthorizationStatus.invalid}
     else:
         return {"status": None}
 
 
-class ChargePoint16(cp):
+class ChargePoint201(cp):
     ##########################################################################################################################
     ###################  HANDLE INCOMING OCPP MESSAGES #######################################################################
     ##########################################################################################################################
-    @on(ocpp_v16_enums.Action.BootNotification)
+    @on(Action.BootNotification)
     def on_boot_notification(self, charge_point_model, charge_point_vendor, **kwargs):
 
         charge_box_serial_number = kwargs.get('charge_box_serial_number', None) 
@@ -69,11 +70,11 @@ class ChargePoint16(cp):
         return call_result.BootNotificationPayload(
             current_time=datetime.utcnow().isoformat(),
             interval=10,
-            status=ocpp_v16_enums.RegistrationStatus.accepted,
+            status=ocpp_enums.RegistrationStatus.accepted,
         )
     
 
-    @on(ocpp_v16_enums.Action.Heartbeat)
+    @on(Action.Heartbeat)
     def on_heartbeat(self):
         current_cp = ChargepointModel.objects.filter(pk=self.id).get()
         current_cp.last_heartbeat = timezone.now()
@@ -83,7 +84,7 @@ class ChargePoint16(cp):
         )
 
 
-    @on(ocpp_v16_enums.Action.StatusNotification)
+    @on(Action.StatusNotification)
     def on_status_notification(self, connector_id, status, **kwargs):
         current_cp = ChargepointModel.objects.filter(pk=self.id).get()
         if connector_id != 0:
@@ -104,13 +105,13 @@ class ChargePoint16(cp):
         return call_result.StatusNotificationPayload()
 
 
-    @on(ocpp_v16_enums.Action.Authorize)
+    @on(Action.Authorize)
     def on_authorize(self, id_tag):
         result = authorize_idTag(id_tag)
         return call_result.AuthorizePayload(id_tag_info=result["status"]) # type: ignore
 
 
-    @on(ocpp_v16_enums.Action.StartTransaction)
+    @on(Action.StartTransaction)
     def on_startTransaction(self, connector_id, id_tag, meter_start, timestamp, **kwargs):
 
         new_transaction = TransactionModel.objects.create(
@@ -122,7 +123,7 @@ class ChargePoint16(cp):
 
         result = authorize_idTag(id_tag)
         
-        if result["status"] == ocpp_v16_enums.AuthorizationStatus.accepted:
+        if result["status"] == ocpp_enums.AuthorizationStatus.accepted:
             new_transaction.id_tag = idTagModel.objects.get(idToken=id_tag)
             reservation_id = kwargs.get('reservation_id', None)
             if reservation_id is not None:
@@ -144,7 +145,7 @@ class ChargePoint16(cp):
         )
 
 
-    @on(ocpp_v16_enums.Action.MeterValues)
+    @on(Action.MeterValues)
     async def on_meterValues(self, connector_id, meter_value, **kwargs):
         transaction_id = kwargs.get('transaction_id', None)
 
@@ -167,7 +168,7 @@ class ChargePoint16(cp):
         return call_result.MeterValuesPayload()
 
 
-    @on(ocpp_v16_enums.Action.StopTransaction)
+    @on(Action.StopTransaction)
     def on_stopTransaction(self, meter_stop, timestamp, transaction_id, **kwargs): #reason, id_tag, transaction_data):
         
         try:

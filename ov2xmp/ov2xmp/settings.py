@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'transaction',
     'idtag',
     'tasks',
+    'chargingprofile',
 
     'api',
 
@@ -126,7 +127,7 @@ if AUTH_LDAP_ENABLE:
     import ldap
 
     # The custom LDAP backend is used, instead of the default
-    AUTHENTICATION_BACKENDS.append('sivi.ldap.CustomLDAPBackend')
+    AUTHENTICATION_BACKENDS.append('ov2xmp.ldap.CustomLDAPBackend')
 
      # The following format is expected: ldap://ldap.example.com
     AUTH_LDAP_SERVER_URI = os.environ.get('AUTH_LDAP_SERVER_URI', None)
@@ -182,8 +183,12 @@ AUTH_PASSWORD_VALIDATORS = [
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'ov2xmp',                      
+        'USER': 'ev4eu',
+        'PASSWORD': 'LPi8FX4eMb1dz02AFfp9H42rp',
+        'HOST': 'localhost',
+        'PORT': '5432',
     }
 }
 
@@ -195,7 +200,7 @@ CHANNEL_LAYERS = {
         "BACKEND": "channels_redis.pubsub.RedisPubSubChannelLayer",
         "CONFIG": {
             "hosts": [
-                (os.environ.get('REDIS_BROKER_HOST', 'docker-lab.trsc.net'), int(os.environ.get('REDIS_BROKER_PORT', '6379')))
+                (os.environ.get('REDIS_BROKER_HOST', 'localhost'), int(os.environ.get('REDIS_BROKER_PORT', '6379')))
             ],
         },
     },
@@ -243,7 +248,7 @@ MESSAGE_TAGS = {
 
 
 # === Celery settings ===
-CELERY_BROKER_URL = "redis://" + os.environ.get('REDIS_BROKER_HOST', 'docker-lab.trsc.net') + ":" + os.environ.get('REDIS_BROKER_PORT', '6379') + "/"
+CELERY_BROKER_URL = "redis://" + os.environ.get('REDIS_BROKER_HOST', 'localhost') + ":" + os.environ.get('REDIS_BROKER_PORT', '6379') + "/"
 #CELERY_RESULT_BACKEND = "redis://" + os.environ.get('REDIS_BROKER_HOST', 'docker-lab.trsc.net') + ":" + os.environ.get('REDIS_BROKER_PORT', '6379') + "/"
 CELERY_RESULT_BACKEND = 'django-db'
 CELERY_CACHE_BACKEND = 'django-cache'

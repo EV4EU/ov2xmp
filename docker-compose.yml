@@ -1,17 +1,28 @@
 version: '3.8'
 services:
   redis:
-    container_name: redis
-    hostname: redis
+    container_name: ov2xmp-redis
+    hostname: ov2xmp-redis
     image: redis:7.2-rc-alpine
     restart: always
     ports:
       - '6379:6379'
-    command: redis-server --save 20 1 --loglevel warning --requirepass eYVX7EwVmmxKPCDmwMtyKVge8oLd2t81
+    command: redis-server --save 20 1 --loglevel warning
     volumes: 
-      - redis-data:/data
+      - redis_data:/data
+
+  db:
+    image: postgres:15.3-alpine3.18
+    restart: always
+    container_name: ov2xmp-db
+    hostname: ov2xmp-db
+    volumes:
+      - ov2xmp_db_data:/var/lib/postgresql/data/
+    ports:
+      - 5432:5432
+    env_file:
+      - ./.env
 
 volumes:
-  redis-data:
-    driver: local
-
+  redis_data:
+  ov2xmp_db_data:

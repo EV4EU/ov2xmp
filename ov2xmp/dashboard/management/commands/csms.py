@@ -1,24 +1,13 @@
 import asyncio
 import logging
-from datetime import datetime
 from websockets.server import serve
 from websockets.exceptions import ConnectionClosedOK, ConnectionClosedError, ConnectionClosed
 from django.core.management.base import BaseCommand
 from asgiref.sync import sync_to_async
 from websockets.typing import Subprotocol
-import uuid 
-from django.db.models import Max
-from django.utils import timezone
 
 from chargepoint.models import Chargepoint as ChargepointModel
-from idtag.models import IdTag as idTagModel
-from transaction.models import Transaction as TransactionModel
-from transaction.models import TransactionStatus
-from connector.models import Connector as ConnectorModel
-from reservation.models import Reservation as ReservationModel
-
-import json
-from asgiref.sync import async_to_sync
+from chargepoint.models import OcppProtocols
 
 from flask import Flask, jsonify, request
 import threading
@@ -28,16 +17,17 @@ logging.basicConfig(level=logging.INFO)
 app = Flask(__name__)
 
 CHARGEPOINTS_V16 = {}
+CHARGEPOINTS_V201 = {}
 
 from dashboard.management.commands.ChargePoint16 import ChargePoint16
-
+# from dashboard.management.commands.ChargePoint201 import ChargePoint201
 
 ##########################################################################################################################
 ##################### CSMS REST API ######################################################################################
 ##########################################################################################################################
 
 # Reset (hard or soft)
-@app.route("/ocpp/reset/<chargepoint_id>", methods=["POST"])
+@app.route("/ocpp16/reset/<chargepoint_id>", methods=["POST"])
 async def reset(chargepoint_id):
     if chargepoint_id in CHARGEPOINTS_V16 and request.json is not None:
         resetType = request.json["reset_type"]
@@ -48,7 +38,7 @@ async def reset(chargepoint_id):
 
 
 # RemoteStartTransaction  
-@app.route("/ocpp/remotestarttransaction/<chargepoint_id>", methods=["POST"])
+@app.route("/ocpp16/remotestarttransaction/<chargepoint_id>", methods=["POST"])
 async def remote_start_transaction(chargepoint_id):
     if chargepoint_id in CHARGEPOINTS_V16 and request.json is not None:
         connector_id = request.json['connector_id']
@@ -61,7 +51,7 @@ async def remote_start_transaction(chargepoint_id):
 
 
 # RemoteStopTransaction  
-@app.route("/ocpp/remotestoptransaction/<chargepoint_id>", methods=["POST"])
+@app.route("/ocpp16/remotestoptransaction/<chargepoint_id>", methods=["POST"])
 async def remote_stop_transaction(chargepoint_id):
     if chargepoint_id in CHARGEPOINTS_V16 and request.json is not None:
         transaction_id = request.json['transaction_id']
@@ -72,7 +62,7 @@ async def remote_stop_transaction(chargepoint_id):
 
 
 # ReserveNow
-@app.route("/ocpp/reservenow/<chargepoint_id>", methods=["POST"])
+@app.route("/ocpp16/reservenow/<chargepoint_id>", methods=["POST"])
 async def reserve_now(chargepoint_id):
     if chargepoint_id in CHARGEPOINTS_V16 and request.json is not None:
         connector_id = request.json['connector_id']
@@ -86,7 +76,7 @@ async def reserve_now(chargepoint_id):
 
 
 # CancelReservation
-@app.route("/ocpp/cancelreservation/<chargepoint_id>", methods=["POST"])
+@app.route("/ocpp16/cancelreservation/<chargepoint_id>", methods=["POST"])
 async def cancel_reservation(chargepoint_id):
     if chargepoint_id in CHARGEPOINTS_V16 and request.json is not None:
         reservation_id = request.json['reservation_id']
@@ -97,7 +87,7 @@ async def cancel_reservation(chargepoint_id):
 
 
 # ChangeAvailability
-@app.route("/ocpp/changeavailability/<chargepoint_id>", methods=["POST"])
+@app.route("/ocpp16/changeavailability/<chargepoint_id>", methods=["POST"])
 async def change_availability(chargepoint_id):
     if chargepoint_id in CHARGEPOINTS_V16 and request.json is not None:
         connector_id = request.json['connector_id']
@@ -108,7 +98,7 @@ async def change_availability(chargepoint_id):
         return jsonify({"status": "Charge Point does not exist"})
 
 # ChangeConfiguration
-@app.route("/ocpp/changeconfiguration/<chargepoint_id>", methods=["POST"])
+@app.route("/ocpp16/changeconfiguration/<chargepoint_id>", methods=["POST"])
 async def change_configuration(chargepoint_id):
     if chargepoint_id in CHARGEPOINTS_V16 and request.json is not None:
         key = request.json['key']
@@ -120,7 +110,7 @@ async def change_configuration(chargepoint_id):
 
 
 # ClearCache
-@app.route("/ocpp/clearcache/<chargepoint_id>", methods=["POST"])
+@app.route("/ocpp16/clearcache/<chargepoint_id>", methods=["POST"])
 async def clear_cache(chargepoint_id):
     if chargepoint_id in CHARGEPOINTS_V16:
         result = await CHARGEPOINTS_V16[chargepoint_id].clear_cache()
@@ -130,7 +120,7 @@ async def clear_cache(chargepoint_id):
 
 
 # UnlockConnector
-@app.route("/ocpp/unlockconnector/<chargepoint_id>", methods=["POST"])
+@app.route("/ocpp16/unlockconnector/<chargepoint_id>", methods=["POST"])
 async def unlock_connector(chargepoint_id):
     if chargepoint_id in CHARGEPOINTS_V16 and request.json is not None:
         connector_id = request.json['connector_id']
@@ -141,7 +131,7 @@ async def unlock_connector(chargepoint_id):
 
 
 # GetConfiguration
-@app.route("/ocpp/getconfiguration/<chargepoint_id>", methods=["POST"])
+@app.route("/ocpp16/getconfiguration/<chargepoint_id>", methods=["POST"])
 async def get_configuration(chargepoint_id):
     if chargepoint_id in CHARGEPOINTS_V16 and request.json is not None:
         keys = request.json['keys']
@@ -157,19 +147,52 @@ async def get_configuration(chargepoint_id):
 
 async def on_connect(websocket, path):
     # For every new charge point that connects, create a ChargePoint instance and start listening for messages.
-    
+    charge_point_id = None
     try:
         try:
             requested_protocols = websocket.request_headers["Sec-WebSocket-Protocol"]
         except KeyError:
             logging.error("Client hasn't requested any Subprotocol. Closing Connection")
             return await websocket.close()
-        if websocket.subprotocol:
+        
+        if websocket.subprotocol == "ocpp1.6":
             logging.info("Protocols Matched: %s", websocket.subprotocol)
+
+            charge_point_id = path.strip("/")
+            cp = ChargePoint16(charge_point_id, websocket)
+            
+            CHARGEPOINTS_V16.update({charge_point_id: cp})
+
+            new_chargepoint = await sync_to_async(ChargepointModel.objects.filter, thread_sensitive=True)(pk=charge_point_id)
+
+            if not (await sync_to_async(new_chargepoint.exists, thread_sensitive=True)()):
+                await ChargepointModel.objects.acreate(chargepoint_id = charge_point_id, 
+                                                       ocpp_version=OcppProtocols.ocpp16,
+                                                       ip_address=websocket.remote_address[0],
+                                                       websocket_port=websocket.remote_address[1])
+            else:
+                await new_chargepoint.aupdate(connected=True)
+
+            await cp.start()
+            '''
+            elif websocket.subprotocol == "ocpp2.0.1":
+                logging.info("Protocols Matched: %s", websocket.subprotocol)
+                charge_point_id = path.strip("/")
+
+                cp = ChargePoint201(charge_point_id, websocket)
+                CHARGEPOINTS_V201.update({charge_point_id: cp})
+
+                new_chargepoint = await sync_to_async(ChargepointModel.objects.filter, thread_sensitive=True)(pk=charge_point_id)
+
+                if not (await sync_to_async(new_chargepoint.exists, thread_sensitive=True)()):
+                    await ChargepointModel.objects.acreate(chargepoint_id = charge_point_id, 
+                                                        ocpp_version=OcppProtocols.ocpp201,
+                                                        ip_address=websocket.remote_address[0],
+                                                        websocket_port=websocket.remote_address[1])
+                else:
+                    await new_chargepoint.aupdate(connected=True)
+            '''
         else:
-            # In the websockets lib if no subprotocols are supported by the
-            # client and the server, it proceeds without a subprotocol,
-            # so we have to manually close the connection.
             logging.warning(
                 "Protocols Mismatched | Expected Subprotocols: %s,"
                 " but client supports  %s | Closing connection",
@@ -178,31 +201,18 @@ async def on_connect(websocket, path):
             )
             return await websocket.close()
 
-        charge_point_id = path.strip("/")
-        cp = ChargePoint16(charge_point_id, websocket)
-        
-        CHARGEPOINTS_V16.update({charge_point_id: cp})
-
-        new_chargepoint = await sync_to_async(ChargepointModel.objects.filter, thread_sensitive=True)(pk=charge_point_id)
-
-        if not (await sync_to_async(new_chargepoint.exists, thread_sensitive=True)()):
-            await ChargepointModel.objects.acreate(chargepoint_id = charge_point_id, ocpp_version="1.6-J")
-
-        await cp.start()
-
-    except ConnectionClosedOK or ConnectionClosedError or ConnectionClosed:
-        if 'charge_point_id' in locals():
+    except ConnectionClosedOK or ConnectionClosedError or ConnectionClosed as e:
+        if charge_point_id is not None:
             logging.error("Disconnected from CP: " + charge_point_id)
-            cp = await sync_to_async(ChargepointModel.objects.filter, thread_sensitive=True)(pk=charge_point_id)
-            await cp.aupdate(connected=False)
-
+            chargepoint = await sync_to_async(ChargepointModel.objects.filter, thread_sensitive=True)(pk=charge_point_id)
+            await chargepoint.aupdate(connected=False)
 
 
 async def main():
 
     threading.Thread(target=lambda: app.run(host="0.0.0.0", port=5688, debug=True, use_reloader=False)).start()
 
-    async with serve(on_connect, "0.0.0.0", 9016, subprotocols=[Subprotocol("ocpp1.6")]):
+    async with serve(on_connect, "0.0.0.0", 9016, subprotocols=[Subprotocol("ocpp1.6"), Subprotocol("ocpp2.0.1")]):
         logging.info("Server Started listening to new connections...")
         await asyncio.Future()
 

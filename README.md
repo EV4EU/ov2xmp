@@ -18,9 +18,9 @@
 3. Activate the environment and install the requirements. Install also the prerequisites needed to build the `python-ldap` library.
 
     ```sh
+    $ apt install gcc libldap2-dev libsasl2-dev ldap-utils python3-dev
     $ source ./venv/bin/activate
     (venv) $ pip install -r requirements.txt
-    $ apt install gcc libldap2-dev libsasl2-dev ldap-utils
     ```
 
 4. Migrate
@@ -35,18 +35,17 @@
     (venv) $ python ov2xmp/manage.py createsuperuser
     ```
 
-6. Go inside the ov2xmp folder and open a new tmux session
+6. Open a new tmux session
 
     ```sh
-    (venv) $ cd ov2xmp
     (venv) $ tmux
     ```
 
 7. Inside the tmux session, activate the environment, and run the Django ASGI (daphne) dev server
 
     ```sh
-    $ source ../venv/bin/activate
-    (venv) $ python manage.py runserver 0.0.0.0:8000
+    $ source ./venv/bin/activate
+    (venv) $ python ov2xmp/manage.py runserver 0.0.0.0:8000
     ```
 
     Detach from the tmux session, by pressing `CTRL + B` and `D`.
@@ -54,28 +53,40 @@
 8. Open a new tmux session by issuing the `tmux` command. Inside the new tmux session, activate the environment, and start the OCPP websocket server
 
     ```sh
-    (venv) $ python manage.py csms
+    $ source ./venv/bin/activate
+    (venv) $ python ov2xmp/manage.py csms
     ```
 
     Alternatively, if you need to record the CSMS logs to a file, issue the following instead:
 
     ```sh
-    (venv) $ python manage.py csms 2>&1 | tee central_system_output-2.log
+    (venv) $ python ov2xmp/manage.py csms 2>&1 | tee ./logs/central_system_output-2.log
     ```
+
+    Detach from the tmux session, by pressing `CTRL + B` and `D`.
 
 9. Open a new tmux session by issuing the `tmux` command, and start the Celery worker:
 
     ```sh
-    $ source ../venv/bin/activate
+    $ source ./venv/bin/activate
+    (venv) $ cd ov2xmp
     (venv) $ celery -A ov2xmp worker -l info
     ```
+
+    Detach from the tmux session, by pressing `CTRL + B` and `D`.
 
 10. Open a new tmux session by issuing the `tmux` command, and start the Celery Flower module:
 
     ```sh
-    $ source ../venv/bin/activate
+    $ source ./venv/bin/activate
     (venv) $ celery -A ov2xmp flower
     ```
+
+## O-V2X-MP REST API
+
+To access the Swagger page of the O-V2X-MP REST API, visit the following page:
+
+`http://ov2xmp.trsc.net:8000/api`
 
 ## Overview of task management pipeline for OCPP requests
 
@@ -132,12 +143,6 @@ ov2xmp -> user : Task status
 deactivate user
 @enduml
 ```
-
-## O-V2X-MP REST API
-
-To access the Swagger page of the O-V2X-MP REST API, visit the following page:
-
-`http://ov2xmp.trsc.net:8000/api`
 
 ## How to develop REST API endpoints for OCPP commands
 
