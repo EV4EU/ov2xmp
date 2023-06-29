@@ -21,7 +21,6 @@ class Chargepoint(models.Model):
     websocket_port = models.IntegerField()
 
     connected = models.BooleanField(default=True)
-    availability_status = models.CharField(choices=[(i.value, i.value) for i in enums_v16.AvailabilityType], default=enums_v16.AvailabilityType.operative.value, max_length=11)
     chargepoint_status = models.CharField(choices=[(enums_v16.ChargePointStatus.available.value, enums_v16.ChargePointStatus.available.value), 
                                                    (enums_v16.ChargePointStatus.unavailable.value, enums_v16.ChargePointStatus.unavailable.value),
                                                    (enums_v16.ChargePointStatus.faulted.value, enums_v16.ChargePointStatus.faulted.value)], default=enums_v16.ChargePointStatus.available.value, max_length=11)

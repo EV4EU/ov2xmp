@@ -6,6 +6,8 @@ from django.conf.urls.static import static
 from rest_framework.schemas import get_schema_view
 from django.views.generic import TemplateView
 from chargepoint.views import ChargepointApiView, ChargepointDetailApiView
+from connector.views import ConnectorApiView, ConnectorDetailApiView
+from chargingprofile.views import ChargingprofileApiView, ChargingprofileDetailApiView
 from idtag.views import IdtagApiView, IdtagDetailApiView
 from .views import *
 from tasks.views import TasksApiView, TasksDetailApiView
@@ -30,20 +32,27 @@ urlpatterns = [
     path('chargepoint/', ChargepointApiView.as_view()),
     path('chargepoint/<str:chargepoint_id>/', ChargepointDetailApiView.as_view()),
 
+    path('connector/', ConnectorApiView.as_view()),
+    path('connector/<str:chargepoint_id>/', ConnectorDetailApiView.as_view()),
+
+    path('chargingprofile/', ChargingprofileApiView.as_view()),
+    path('chargingprofile/<str:chargingprofile_id>/', ChargingprofileDetailApiView.as_view()),
+
     path('idtag/', IdtagApiView.as_view()),
     path('idtag/<str:id_token>/', IdtagDetailApiView.as_view()),
 
     path('task/', TasksApiView.as_view()),
     path('task/<str:task_id>/', TasksDetailApiView.as_view()),
 
-    path('ocpp/reset/', OcppResetApiView.as_view()),
-    path('ocpp/remotestarttransaction', OcppRemoteStartTrasactionApiView.as_view()),
-    path('ocpp/reservenow', OcppReserveNowApiView.as_view()),
-    path('ocpp/cancelreservation', OcppCancelReservationApiView.as_view()),
-    path('ocpp/changeavailaility', OcppChangeAvailabilityApiView.as_view()),
-    path('ocpp/changeconfiguration', OcppChangeConfigurationApiView.as_view()),
-    path('ocpp/clearcache', OcppClearCacheApiView.as_view()),
-    path('ocpp/unlockconnector', OcppUnlockConnectorApiView.as_view()),
-    path('ocpp/getconfiguration', OcppGetConfigurationApiView.as_view())
+    path('ocpp16/reset/', OcppResetApiView.as_view()),
+    path('ocpp16/remotestarttransaction', OcppRemoteStartTrasactionApiView.as_view()),
+    path('ocpp16/remotestoptransaction', OcppRemoteStopTrasactionApiView.as_view()),
+    path('ocpp16/reservenow', OcppReserveNowApiView.as_view()),
+    path('ocpp16/cancelreservation', OcppCancelReservationApiView.as_view()),
+    path('ocpp16/changeavailaility', OcppChangeAvailabilityApiView.as_view()),
+    path('ocpp16/changeconfiguration', OcppChangeConfigurationApiView.as_view()),
+    path('ocpp16/clearcache', OcppClearCacheApiView.as_view()),
+    path('ocpp16/unlockconnector', OcppUnlockConnectorApiView.as_view()),
+    path('ocpp16/getconfiguration', OcppGetConfigurationApiView.as_view()),
 
 ]

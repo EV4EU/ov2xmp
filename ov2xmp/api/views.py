@@ -11,7 +11,7 @@ from .tasks import *
 class OcppResetApiView(GenericAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = OcppResetSerializer
-    schema = AutoSchema(tags=['OCPP'])
+    schema = AutoSchema(tags=['OCPP 1.6'])
 
     def post(self, request, *args, **kwargs):
         '''
@@ -34,7 +34,7 @@ class OcppResetApiView(GenericAPIView):
 class OcppRemoteStartTrasactionApiView(GenericAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = OcppRemoteStartTransactionSerializer
-    schema = AutoSchema(tags=['OCPP'])
+    schema = AutoSchema(tags=['OCPP 1.6'])
 
     def post(self, request, *args, **kwargs):
         '''
@@ -57,7 +57,7 @@ class OcppRemoteStartTrasactionApiView(GenericAPIView):
 class OcppRemoteStopTrasactionApiView(GenericAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = OcppRemoteStopTransactionSerializer
-    schema = AutoSchema(tags=['OCPP'])
+    schema = AutoSchema(tags=['OCPP 1.6'])
 
     def post(self, request, *args, **kwargs):
         '''
@@ -80,7 +80,7 @@ class OcppRemoteStopTrasactionApiView(GenericAPIView):
 class OcppReserveNowApiView(GenericAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = OcppReserveNowSerializer
-    schema = AutoSchema(tags=['OCPP'])
+    schema = AutoSchema(tags=['OCPP 1.6'])
 
     def post(self, request, *args, **kwargs):
         '''
@@ -103,7 +103,7 @@ class OcppReserveNowApiView(GenericAPIView):
 class OcppCancelReservationApiView(GenericAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = OcppCancelReservationSerializer
-    schema = AutoSchema(tags=['OCPP'])
+    schema = AutoSchema(tags=['OCPP 1.6'])
 
     def post(self, request, *args, **kwargs):
         '''
@@ -126,7 +126,7 @@ class OcppCancelReservationApiView(GenericAPIView):
 class OcppChangeAvailabilityApiView(GenericAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = OcppChangeAvailabilitySerializer
-    schema = AutoSchema(tags=['OCPP'])
+    schema = AutoSchema(tags=['OCPP 1.6'])
 
     def post(self, request, *args, **kwargs):
         '''
@@ -149,7 +149,7 @@ class OcppChangeAvailabilityApiView(GenericAPIView):
 class OcppChangeConfigurationApiView(GenericAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = OcppChangeConfigurationSerializer
-    schema = AutoSchema(tags=['OCPP'])
+    schema = AutoSchema(tags=['OCPP 1.6'])
 
     def post(self, request, *args, **kwargs):
         '''
@@ -172,7 +172,7 @@ class OcppChangeConfigurationApiView(GenericAPIView):
 class OcppClearCacheApiView(GenericAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = OcppCommandSerializer
-    schema = AutoSchema(tags=['OCPP'])
+    schema = AutoSchema(tags=['OCPP 1.6'])
 
     def post(self, request, *args, **kwargs):
         '''
@@ -195,7 +195,7 @@ class OcppClearCacheApiView(GenericAPIView):
 class OcppUnlockConnectorApiView(GenericAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = OcppUnlockConnectorSerializer
-    schema = AutoSchema(tags=['OCPP'])
+    schema = AutoSchema(tags=['OCPP 1.6'])
 
     def post(self, request, *args, **kwargs):
         '''
@@ -218,7 +218,7 @@ class OcppUnlockConnectorApiView(GenericAPIView):
 class OcppGetConfigurationApiView(GenericAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = OcppGetConfigurationSerializer
-    schema = AutoSchema(tags=['OCPP'])
+    schema = AutoSchema(tags=['OCPP 1.6'])
 
     def post(self, request, *args, **kwargs):
         '''

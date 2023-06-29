@@ -92,10 +92,9 @@ class ChargepointDetailApiView(GenericAPIView):
             'chargepoint_serial_number': request.data.get('chargepoint_serial_number'), 
             'chargepoint_model': request.data.get('chargepoint_model'),
             'chargepoint_vendor': request.data.get('chargepoint_vendor'),
-            'availability_status': request.data.get('availability_status'),
             'ocpp_version': request.data.get('ocpp_version')
         }
-        serializer = ChargepointSerializer(instance = chargepoint_instance, data=data, partial = True)
+        serializer = ChargepointSerializer(instance = chargepoint_instance, data=data, partial = True) # type: ignore
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)

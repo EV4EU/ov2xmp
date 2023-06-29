@@ -33,18 +33,6 @@ ALLOWED_HOSTS = ['*']
 # Application definition
 
 INSTALLED_APPS = [
-    'dashboard',
-    'users',
-    'chargepoint',
-    'connector',
-    'reservation',
-    'transaction',
-    'idtag',
-    'tasks',
-    'chargingprofile',
-
-    'api',
-
     'daphne',
     'celery',
 
@@ -65,7 +53,19 @@ INSTALLED_APPS = [
     'channels_redis',
 
     'rest_framework',
-    'oauth2_authcodeflow'
+    'oauth2_authcodeflow',
+
+    'dashboard',
+    'users',
+    'chargepoint',
+    'connector',
+    'reservation',
+    'transaction',
+    'idtag',
+    'tasks',
+    'chargingprofile',
+
+    'api'
 ]
 
 MIDDLEWARE = [
@@ -255,6 +255,7 @@ CELERY_CACHE_BACKEND = 'django-cache'
 CELERY_ENABLE_UTC = True
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_ACCEPT_CONTENT = ['json']
+CELERY_RESULT_EXTENDED = True
 
 
 # === SMTP settings ===

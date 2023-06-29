@@ -23,62 +23,68 @@
     (venv) $ pip install -r requirements.txt
     ```
 
-4. Migrate
+4. Go to the `ov2xmp` folder
 
     ```sh
-    (venv) $ python ov2xmp/manage.py migrate
+    cd ov2xmp
     ```
 
-5. Create a superuser
+5. Migrate
 
     ```sh
-    (venv) $ python ov2xmp/manage.py createsuperuser
+    (venv) $ python manage.py migrate
     ```
 
-6. Open a new tmux session
+6. Create a superuser
+
+    ```sh
+    (venv) $ python manage.py createsuperuser
+    ```
+
+7. Open a new tmux session
 
     ```sh
     (venv) $ tmux
     ```
 
-7. Inside the tmux session, activate the environment, and run the Django ASGI (daphne) dev server
+8. Inside the tmux session, activate the environment, and run the Django ASGI (daphne) dev server
 
     ```sh
-    $ source ./venv/bin/activate
-    (venv) $ python ov2xmp/manage.py runserver 0.0.0.0:8000
+    $ source ../venv/bin/activate
+    (venv) $ python manage.py runserver 0.0.0.0:8000
     ```
 
     Detach from the tmux session, by pressing `CTRL + B` and `D`.
 
-8. Open a new tmux session by issuing the `tmux` command. Inside the new tmux session, activate the environment, and start the OCPP websocket server
+9. Open a new tmux session by issuing the `tmux` command. Inside the new tmux session, activate the environment, and start the Sanic webserver
 
     ```sh
-    $ source ./venv/bin/activate
-    (venv) $ python ov2xmp/manage.py csms
+    $ source ../venv/bin/activate
+    (venv) $ sanic csms:app --host=0.0.0.0 --port=9000 --reload
     ```
 
     Alternatively, if you need to record the CSMS logs to a file, issue the following instead:
 
     ```sh
-    (venv) $ python ov2xmp/manage.py csms 2>&1 | tee ./logs/central_system_output-2.log
+    (venv) $ sanic csms:app --host=0.0.0.0 --port=9000 --reload 2>&1 | tee ../logs/central_system_output-3.log
     ```
 
     Detach from the tmux session, by pressing `CTRL + B` and `D`.
 
-9. Open a new tmux session by issuing the `tmux` command, and start the Celery worker:
+10. Open a new tmux session by issuing the `tmux` command, and start the Celery worker:
 
     ```sh
-    $ source ./venv/bin/activate
+    $ source ../venv/bin/activate
     (venv) $ cd ov2xmp
     (venv) $ celery -A ov2xmp worker -l info
     ```
 
     Detach from the tmux session, by pressing `CTRL + B` and `D`.
 
-10. Open a new tmux session by issuing the `tmux` command, and start the Celery Flower module:
+11. Open a new tmux session by issuing the `tmux` command, and start the Celery Flower module:
 
     ```sh
-    $ source ./venv/bin/activate
+    $ source ../venv/bin/activate
     (venv) $ celery -A ov2xmp flower
     ```
 
@@ -87,6 +93,12 @@
 To access the Swagger page of the O-V2X-MP REST API, visit the following page:
 
 `http://ov2xmp.trsc.net:8000/api`
+
+## O-V2X-MP Django Admin page
+
+The django admin page allows you to view and modify all the django objects of O-V2X-MP (e.g., chargepoints, idTags, charging profiles, tasks, etc). To access that page, visit the following link:
+
+`http://ov2xmp.trsc.net:8000/admin`
 
 ## Overview of task management pipeline for OCPP requests
 
@@ -146,9 +158,9 @@ deactivate user
 
 ## How to develop REST API endpoints for OCPP commands
 
-To implement a REST API endpoint for issuing an OCPP v1.6 command that is initiated by the CSMS (e.g., a Reset command), follow the steps bellow:
+To implement a REST API endpoint for issuing an OCPP 1.6 or 2.0.1 command that is initiated by the CSMS (e.g., a Reset command), follow the steps bellow:
 
-1. First, we have to define the function that implements the entire logic of the command, from scratch. In particular, inside `dashboard/management/commands/central_system_v16.py`, under the "ACTIONS INITIATED BY THE CSMS" comment header, create a function for the ChargePoint class, like this:
+1. First, we have to extend the ChargePoint class of the `ocpp` library, in order to define the entire logic of the new OCPP command. So, in `ov2xmp/chargepoint/ChargePoint16.py` or `ov2xmp/chargepoint/ChargePoint201.py`, under the "ACTIONS INITIATED BY THE CSMS" comment header, create a function for the overloaded ChargePoint class, like this:
 
     ```python
     # Reset
@@ -168,39 +180,38 @@ To implement a REST API endpoint for issuing an OCPP v1.6 command that is initia
     - The function parameters can be determined by checking the corresponding class inside `ocpp.v16.call`. For the Reset command, the parameters are derived from the `ResetPayload` class. This class has the `type` attribute, therefore we define the corresponding argument.
     - Inside the function, we define the entire logic of the OCPP command and make all the Django ORM calls. Note that in the end we must return a specific dictionary: `{"status": XXX}`, where `XXX` is whatever output we need to return.
 
-2. Next, we have to add a REST API endpoint to the Flask server of the CSMS (this is utilised by Django to initiate actions towards the OCPP server and the ChargePoint objects). In particular, under the CSMS REST API comment section of the `dashboard/management/commands/central_system_v16.py` file, create a new function, like this:
+2. Next, we have to add a REST API endpoint to the Sanic server of the CSMS (this is utilised by Django to initiate actions towards the OCPP server and the ChargePoint objects). In particular, under the CSMS REST API comment section of the `ov2xmp/csms.py` file, create a new function, like this:
 
     ```python
     # Reset (hard or soft)
-    @app.route("/ocpp/reset/<chargepoint_id>", methods=["POST"])
-    async def reset(chargepoint_id):
-        if chargepoint_id in CHARGEPOINTS_V16 and request.json is not None:
+    @app.route("/ocpp16/reset/<chargepoint_id:str>", methods=["POST"])
+    async def reset(request: Request, chargepoint_id: str):
+        if chargepoint_id in app.ctx.CHARGEPOINTS_V16 and request.json is not None:
             resetType = request.json["reset_type"]
-            result = await CHARGEPOINTS_V16[chargepoint_id].reset(resetType)
-            return jsonify(result)
+            result = await app.ctx.CHARGEPOINTS_V16[chargepoint_id].reset(resetType)
+            return json(result)
         else:
-            return jsonify({"status": "Charge Point does not exist"})
-
+            return json({"status": "Charge Point does not exist"})
     ```
 
     Some notes:
     - Start with a comment that refers to the OCPP command name
-    - The `@app.route()` decorator defines the URL of the new OCPP command. It must follow the following format: `/ocpp/XXX/<chargepoint_id>`, where `XXX` is the name of the OCPP command. Always the method is POST and all parameters are provided in the JSON payload, except the `chargepoint_id`, which is defined in the URL.
-    - At the beginning, the check `if chargepoint_id in CHARGEPOINTS_V16 and request.json is not None` is always performed. If successful, the parameters are extracted from `request.json` and the corresponding function that we implemented in step 1 is called.
+    - The `@app.route()` decorator defines the URL of the new OCPP command. It must follow the following format: `/ocpp16/XXX/<chargepoint_id>` (replace `ocpp16` with `ocpp201` if writing an endpoint for 2.0.1), where `XXX` is the name of the OCPP command. Always the method is POST and all parameters are provided in the JSON payload, except the `chargepoint_id`, which is always defined in the URL.
+    - At the beginning, the check `if chargepoint_id in app.ctx.CHARGEPOINTS_V16 and request.json is not None` is always performed. If successful, the parameters are extracted from `request.json` and the corresponding function that we implemented in step 1 is awaited.
 
 3. Next, create a celery task that calls the REST API endpoint previously defined. To do that, define a function inside `api/tasks.py` like this:
 
     ```python
     @shared_task()
-    def ocpp_reset_task(chargepoint_id, reset_type):
-        message = requests.post("http://localhost:5688/ocpp/reset/" + chargepoint_id, json={"reset_type": reset_type}).json()
+    def ocpp16_reset_task(chargepoint_id, reset_type):
+        message = requests.post("http://localhost:9000/ocpp16/reset/" + chargepoint_id, json={"reset_type": reset_type}).json()
         send_task_update(message)
         return message
     ```
 
     Some notes:
     - It always start with the `@shared_task()` decorator.
-    - Note the function name. It starts with `ocpp_`, then the OCPP command name follows, and it ends with `_task`.
+    - Note the function name. It always starts with `ocpp16_` or `ocpp201_`, then the OCPP command name follows, and it ends with `_task`.
     - All command parameters are provided in the function arguments (e.g., `reset_type`)
     - Command parameters are transfered to the CSMS service via the `json` argument of the `requests.post()` function.
     - At the end, the command respond is provided to the `send_task_update()`, which broadcasts the results via Django Channels.
@@ -255,7 +266,7 @@ To implement a REST API endpoint for issuing an OCPP v1.6 command that is initia
 6. Include the new endpoint in `api/urls.py`, like so:
 
     ```python
-    path('ocpp/reset/', OcppResetApiView.as_view()),
+    path('ocpp16/reset/', OcppResetApiView.as_view()),
     ```
 
     Some notes:
