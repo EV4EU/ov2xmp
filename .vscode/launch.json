@@ -17,15 +17,17 @@
             "justMyCode": true
         },
         {
-            "name": "OCPP Central System",
+            "name": "Python: Sanic",
             "type": "python",
             "request": "launch",
-            "program": "${workspaceFolder}/ov2xmp/manage.py",
+            "module": "sanic",
+            "cwd": "${workspaceFolder}/ov2xmp/",
             "args": [
-                "csms"
+                "csms:app",
+                "--host=0.0.0.0",
+                "--port=9000"
             ],
-            "django": true,
-            "justMyCode": true
+            "jinja": true
         }
     ]
 }

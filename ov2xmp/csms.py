@@ -10,6 +10,8 @@ from ocpp.v16.enums import ChargePointStatus
 
 from asgiref.sync import sync_to_async
 
+from dataclasses import dataclass, asdict
+
 from chargepoint.ChargePoint16 import ChargePoint16
 # from chargepoint.ChargePoint201 import ChargePoint201
 
@@ -139,6 +141,7 @@ async def get_configuration(request: Request, chargepoint_id: str):
     if chargepoint_id in app.ctx.CHARGEPOINTS_V16 and request.json is not None:
         keys = request.json['keys']
         result = await app.ctx.CHARGEPOINTS_V16[chargepoint_id].get_configuration(keys)
+        result["status"] = asdict(result["status"])
         return json(result)
     else:
         return json({"status": "Charge Point does not exist"})

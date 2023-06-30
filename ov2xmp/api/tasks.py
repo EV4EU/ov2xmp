@@ -30,14 +30,14 @@ def ocpp_reset_task(chargepoint_id, reset_type):
 
 @shared_task()
 def ocpp_remote_start_transaction(chargepoint_id, connector_id, id_tag, charging_profile):
-    message = requests.post("http://localhost:9000/ocpp16/remotestarttrasaction/" + chargepoint_id, json={"connector_id": connector_id, "id_tag": id_tag, "charging_profile": charging_profile}).json()
+    message = requests.post("http://localhost:9000/ocpp16/remotestarttransaction/" + chargepoint_id, json={"connector_id": connector_id, "id_tag": id_tag, "charging_profile": charging_profile}).json()
     send_task_update(message)
     return message
 
 
 @shared_task()
 def ocpp_remote_stop_transaction(chargepoint_id, transaction_id):
-    message = requests.post("http://localhost:9000/ocpp16/remotestoptrasaction/" + chargepoint_id, json={"transaction_id": transaction_id}).json()
+    message = requests.post("http://localhost:9000/ocpp16/remotestoptransaction/" + chargepoint_id, json={"transaction_id": transaction_id}).json()
     send_task_update(message)
     return message
 

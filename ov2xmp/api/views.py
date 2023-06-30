@@ -44,11 +44,11 @@ class OcppRemoteStartTrasactionApiView(GenericAPIView):
         serializer = OcppRemoteStartTransactionSerializer(data=request.data)
         if serializer.is_valid():
             if serializer.data["sync"]:
-                task = ocpp_remote_start_transaction(serializer.data["chargepoint_id"], request.data["connector_id"], request.data["id_tag"], request.data["charging_profile"])
+                task = ocpp_remote_start_transaction(serializer.data["chargepoint_id"], request.data["connector_id"], request.data["id_tag"], request.data.get("charging_profile", None))
                 task["success"] = True
                 return Response(task, status=status.HTTP_200_OK)
             else:
-                task = ocpp_remote_start_transaction.delay(serializer.data["chargepoint_id"], request.data["connector_id"], request.data["id_tag"], request.data["charging_profile"]) # type: ignore
+                task = ocpp_remote_start_transaction.delay(serializer.data["chargepoint_id"], request.data["connector_id"], request.data["id_tag"], request.data.get("charging_profile", None)) # type: ignore
                 return Response({"success": True, "status": "Task has been submitted successfully", "task_id": task.id}, status=status.HTTP_200_OK)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
