@@ -86,7 +86,7 @@ class Chargingprofile(models.Model):
     _data_schema = {
         "type": "object",
         "properties": {
-            "startPeriod": {"type": "string", "default": "", "example":"Name", "title":"Name"},
+            "startPeriod": {"type": "integer", "default": "", "example":"Name", "title":"Name"},
             "limit": {"type": "number", "default": 0,   "example":"Nom", "title":"Nom"},
             "number_phases": {"type": "integer", "default": 1, "example":"Nom", "title":"Nom"},
         },

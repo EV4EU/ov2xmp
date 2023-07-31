@@ -5,7 +5,8 @@ from rest_framework import status
 from rest_framework import permissions
 from django_celery_results.models import TaskResult
 from .serializers import TaskResultSerializer
-from rest_framework.schemas.openapi import AutoSchema
+from drf_spectacular.openapi import AutoSchema
+
 
 # Create your views here.
 class TasksApiView(GenericAPIView):
@@ -13,7 +14,7 @@ class TasksApiView(GenericAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = TaskResultSerializer
     queryset = TaskResult.objects.all()
-    schema = AutoSchema(tags=['Tasks'])
+    schema = AutoSchema()
 
     # 1. List all
     def get(self, request, *args, **kwargs):
@@ -29,7 +30,7 @@ class TasksDetailApiView(GenericAPIView):
     # add permission to check if user is authenticated
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = TaskResultSerializer
-    schema = AutoSchema(tags=['Tasks'])
+    schema = AutoSchema()
 
     def get_object(self, task_id):        
         # Helper method to get the object with given todo_id, and user_id

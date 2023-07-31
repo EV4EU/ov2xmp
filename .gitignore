@@ -6,6 +6,7 @@ __pycache__
 db.sqlite3
 profile_pics
 logs
+*.pdf
 
 # Backup files # 
 *.bak 

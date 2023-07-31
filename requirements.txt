@@ -10,7 +10,7 @@ django-crispy-forms
 django-oauth2-authcodeflow
 django-timezone-field
 djangorestframework
-drf-yasg
+drf-spectacular
 ocpp
 Pillow
 psycopg2-binary

@@ -5,7 +5,7 @@ from rest_framework import status
 from rest_framework import permissions
 from .models import Connector
 from .serializers import ConnectorSerializer
-from rest_framework.schemas.openapi import AutoSchema
+from drf_spectacular.openapi import AutoSchema
 
 
 # Create your views here.
@@ -14,7 +14,7 @@ class ConnectorApiView(GenericAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = ConnectorSerializer
     queryset = Connector.objects.all()
-    schema = AutoSchema(tags=['Connector'])
+    schema = AutoSchema()
 
     # 1. List all
     def get(self, request, *args, **kwargs):
@@ -30,7 +30,7 @@ class ConnectorDetailApiView(GenericAPIView):
     # add permission to check if user is authenticated
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = ConnectorSerializer
-    schema = AutoSchema(tags=['Connector'])
+    schema = AutoSchema()
 
     def get_objects(self, chargepoint_id):        
         try:

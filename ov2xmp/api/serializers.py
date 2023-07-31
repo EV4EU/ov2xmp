@@ -50,3 +50,21 @@ class OcppUnlockConnectorSerializer(OcppCommandSerializer):
 
 class OcppGetConfigurationSerializer(OcppCommandSerializer):
     keys = serializers.ListField(child=serializers.CharField(max_length=50), required=False, default=None)
+
+
+class OcppGetCompositeScheduleSerializer(OcppCommandSerializer):
+    connector_id = serializers.IntegerField()
+    duration = serializers.IntegerField()
+    charging_rate_unit_type = serializers.ChoiceField(required=False, choices=tuple(member.value for member in ocppv16_enums.ChargingRateUnitType))
+
+
+class OcppClearChargingProfileSerializer(OcppCommandSerializer):
+    charging_profile_id = serializers.IntegerField(required=False)
+    connector_id = serializers.IntegerField(required=False)
+    charging_profile_purpose_type = serializers.ChoiceField(required=False, choices=tuple(member.value for member in ocppv16_enums.ChargingProfilePurposeType))
+    stack_level = serializers.IntegerField(required=False)    
+
+
+class OcppSetChargingProfileSerializer(OcppCommandSerializer):
+    connector_id = serializers.IntegerField()
+    charging_profile_id = serializers.IntegerField()

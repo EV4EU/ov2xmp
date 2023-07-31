@@ -5,7 +5,7 @@ from rest_framework import status
 from rest_framework import permissions
 from .models import Chargepoint
 from .serializers import ChargepointSerializer
-from rest_framework.schemas.openapi import AutoSchema
+from drf_spectacular.openapi import AutoSchema
 
 
 class ChargepointApiView(GenericAPIView):
@@ -13,7 +13,7 @@ class ChargepointApiView(GenericAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = ChargepointSerializer
     queryset = Chargepoint.objects.all()
-    schema = AutoSchema(tags=['Chargepoint'])
+    schema = AutoSchema()
 
     # 1. List all
     def get(self, request, *args, **kwargs):
@@ -51,7 +51,7 @@ class ChargepointDetailApiView(GenericAPIView):
     # add permission to check if user is authenticated
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = ChargepointSerializer
-    schema = AutoSchema(tags=['Chargepoint'])
+    schema = AutoSchema()
 
     def get_object(self, chargepoint_id):        
         # Helper method to get the object with given todo_id, and user_id

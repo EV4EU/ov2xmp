@@ -11,7 +11,7 @@ from rest_framework import status
 from rest_framework import permissions
 from .models import IdTag
 from .serializers import IdTagSerializer
-from rest_framework.schemas.openapi import AutoSchema
+from drf_spectacular.openapi import AutoSchema
 
 
 @login_required
@@ -97,7 +97,7 @@ class IdtagApiView(GenericAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = IdTagSerializer
     queryset = IdTag.objects.all()
-    schema = AutoSchema(tags=['ID Tags'])
+    schema = AutoSchema()
 
     # 1. List all
     def get(self, request, *args, **kwargs):
@@ -126,7 +126,7 @@ class IdtagDetailApiView(GenericAPIView):
     # add permission to check if user is authenticated
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = IdTagSerializer
-    schema = AutoSchema(tags=['ID Tags'])
+    schema = AutoSchema()
 
     def get_object(self, id_token):        
         try:

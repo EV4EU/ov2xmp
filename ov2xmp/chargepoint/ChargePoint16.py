@@ -79,7 +79,8 @@ class ChargePoint16(cp):
         current_cp.last_heartbeat = timezone.now()
         current_cp.save()
         return call_result.HeartbeatPayload(
-            current_time=datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S") + "Z"
+            #current_time=datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S") + "Z"
+            current_time=datetime.utcnow().isoformat()
         )
 
 
@@ -321,5 +322,41 @@ class ChargePoint16(cp):
         response = await self.call(request)
         if response is not None:
             return {"status": response}
+        else:
+            return {"status": None}
+
+    # GetCompositeSchedule
+    async def get_composite_schedule(self, connector_id, duration, charging_rate_unit_type):
+        request = call.GetCompositeSchedulePayload(
+            connector_id= connector_id,
+            duration= duration,
+            charging_rate_unit= charging_rate_unit_type)
+        response = await self.call(request)
+        if response is not None:
+            return {"status": response.status}
+        else:
+            return {"status": None}
+        
+    # ClearChargingProfile
+    async def clear_charging_profile(self, charging_profile_id, connector_id, charging_profile_purpose_type, stack_level):
+        request = call.ClearChargingProfilePayload(
+            id = charging_profile_id,
+            connector_id = connector_id,
+            charging_profile_purpose = charging_profile_purpose_type,
+            stack_level = stack_level)
+        response = await self.call(request)
+        if response is not None:
+            return {"status": response.status}
+        else:
+            return {"status": None}
+        
+    #SetChargingProfile
+    async def set_charging_profile(self, connector_id, charging_profile):
+        request = call.SetChargingProfilePayload(
+            connector_id=connector_id,
+            cs_charging_profiles = charging_profile)
+        response = await self.call(request)
+        if response is not None:
+            return {"status": response.status}
         else:
             return {"status": None}

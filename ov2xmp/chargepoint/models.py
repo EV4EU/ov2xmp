@@ -1,6 +1,8 @@
 from django.db import models
 from ocpp.v16 import enums as enums_v16
 from django.utils.translation import gettext_lazy
+from location.models import Location
+
 
 class OcppProtocols(models.TextChoices):
     ocpp16 = "ocpp16", gettext_lazy("ocpp1.6")
@@ -27,3 +29,4 @@ class Chargepoint(models.Model):
     
     ocpp_version = models.CharField(max_length=9, choices=OcppProtocols.choices)
     last_heartbeat = models.DateTimeField(null=True)
+    location = models.ForeignKey(Location, on_delete=models.SET_NULL, null=True)

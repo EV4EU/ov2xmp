@@ -5,7 +5,7 @@ from rest_framework import status
 from rest_framework import permissions
 from .models import Chargingprofile
 from .serializers import ChargingprofileSerializer
-from rest_framework.schemas.openapi import AutoSchema
+from drf_spectacular.openapi import AutoSchema
 
 
 class ChargingprofileApiView(GenericAPIView):
@@ -13,7 +13,7 @@ class ChargingprofileApiView(GenericAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = ChargingprofileSerializer
     queryset = Chargingprofile.objects.all()
-    schema = AutoSchema(tags=['Chargingprofile'])
+    schema = AutoSchema()
 
     # 1. List all
     def get(self, request, *args, **kwargs):
@@ -29,6 +29,7 @@ class ChargingprofileApiView(GenericAPIView):
         '''
         Create the ChargingProfile with given data. Please note that chargingschedule_period accepts multiple JSON objects with the following keys: "startPeriod", "limit", "number_phases".
         '''
+        print(request.data)
 
         data = {
             'chargingprofile_id': request.data.get('chargingprofile_id'), 
@@ -59,7 +60,7 @@ class ChargingprofileDetailApiView(GenericAPIView):
     # add permission to check if user is authenticated
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = ChargingprofileSerializer
-    schema = AutoSchema(tags=['Chargingprofile'])
+    schema = AutoSchema()
 
     def get_object(self, chargingprofile_id):        
         # Helper method to get the object with given todo_id, and user_id

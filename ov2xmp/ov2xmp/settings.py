@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     'channels_redis',
 
     'rest_framework',
+    'drf_spectacular',
     'oauth2_authcodeflow',
 
     'dashboard',
@@ -64,6 +65,9 @@ INSTALLED_APPS = [
     'idtag',
     'tasks',
     'chargingprofile',
+    'location',
+    'heartbeat',
+    'statusnotification',
 
     'api'
 ]
@@ -266,6 +270,21 @@ EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_PASSWORD', None)
 EMAIL_PORT = os.environ.get('EMAIL_SMTP_PORT', None)
 
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
+# === REST Settings ===
+
+REST_FRAMEWORK = {
+    # YOUR SETTINGS
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'O-V2X-MP REST API',
+    'DESCRIPTION': 'The Open V2X Management Platform of the EV4EU project.',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    # OTHER SETTINGS
+}
 
 
 '''

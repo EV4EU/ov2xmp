@@ -3,31 +3,32 @@ from django.urls import path, include, re_path
 from django.contrib.auth import views as auth_views
 from django.conf import settings
 from django.conf.urls.static import static
-from rest_framework.schemas import get_schema_view
-from django.views.generic import TemplateView
 from chargepoint.views import ChargepointApiView, ChargepointDetailApiView
 from connector.views import ConnectorApiView, ConnectorDetailApiView
 from chargingprofile.views import ChargingprofileApiView, ChargingprofileDetailApiView
 from idtag.views import IdtagApiView, IdtagDetailApiView
 from .views import *
 from tasks.views import TasksApiView, TasksDetailApiView
-
-from rest_framework.schemas import get_schema_view
-from django.views.generic import TemplateView
+from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
 
 
 urlpatterns = [
 
-    path('', TemplateView.as_view(
-        template_name='swagger-ui.html',
-        extra_context={'schema_url':'openapi-schema'}
-    ), name='swagger-ui'),
+
+    #path('', TemplateView.as_view(
+    #    template_name='swagger-ui.html',
+    #    extra_context={'schema_url':'openapi-schema'}
+    #), name='swagger-ui'),
     
-    path('schema/', get_schema_view(
-        title="O-V2X-MP REST API",
-        description="The description of the REST API provided by the O-V2X-MP. Under the OCPP category, the user can send OCPP commands to the underlying charge points",
-        version="1.0.0"
-    ), name='openapi-schema'),
+    #path('schema/', get_schema_view(
+    #    title="O-V2X-MP REST API",
+    #    description="The description of the REST API provided by the O-V2X-MP.",
+    #    version="1.0.0"
+    #), name='openapi-schema'),
+
+    path('', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
+    path('schema/', SpectacularAPIView.as_view(), name='schema'),
+    path('redoc/', SpectacularRedocView.as_view(), name='redoc'),
 
     path('chargepoint/', ChargepointApiView.as_view()),
     path('chargepoint/<str:chargepoint_id>/', ChargepointDetailApiView.as_view()),
@@ -54,5 +55,7 @@ urlpatterns = [
     path('ocpp16/clearcache', OcppClearCacheApiView.as_view()),
     path('ocpp16/unlockconnector', OcppUnlockConnectorApiView.as_view()),
     path('ocpp16/getconfiguration', OcppGetConfigurationApiView.as_view()),
-
+    path('ocpp16/getcompositeschedule', OcppGetCompositeScheduleApiView.as_view()),
+    path('ocpp16/clearchargingprofile', OcppClearChargingProfileApiView.as_view()),
+    path('ocpp16/setchargingprofile', OcppSetChargingProfileApiView.as_view())
 ]
