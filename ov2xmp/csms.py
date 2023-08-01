@@ -251,3 +251,4 @@ async def on_connect(request: Request, websocket: Websocket, charge_point_id: st
     except asyncio.exceptions.CancelledError:
         logger.error("Disconnected from CP: %s", charge_point_id)
         ChargepointModel.objects.filter(pk=charge_point_id).update(connected=False, chargepoint_status=ChargePointStatus.unavailable.value)
+        app.ctx.CHARGEPOINTS_V16[charge_point_id]._connection.fail_connection()  # Ungracefully close the Websocket connection so that the CP tries to reconnect

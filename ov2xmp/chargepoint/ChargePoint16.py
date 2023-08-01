@@ -9,6 +9,8 @@ from transaction.models import Transaction as TransactionModel
 from transaction.models import TransactionStatus
 from connector.models import Connector as ConnectorModel
 from reservation.models import Reservation as ReservationModel
+from statusnotification.models import Statusnotification as StatusnotificationModel
+from heartbeat.models import Heartbeat as HeartbeatModel
 
 import uuid
 from django.utils import timezone
@@ -78,6 +80,12 @@ class ChargePoint16(cp):
         current_cp = ChargepointModel.objects.filter(pk=self.id).get()
         current_cp.last_heartbeat = timezone.now()
         current_cp.save()
+
+        HeartbeatModel.objects.create(
+            timestamp = current_cp.last_heartbeat,
+            chargepoint = current_cp
+        )
+
         return call_result.HeartbeatPayload(
             #current_time=datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S") + "Z"
             current_time=datetime.utcnow().isoformat()
@@ -85,13 +93,14 @@ class ChargePoint16(cp):
 
 
     @on(ocpp_v16_enums.Action.StatusNotification)
-    def on_status_notification(self, connector_id, status, **kwargs):
+    def on_status_notification(self, connector_id, error_code, status, **kwargs):
         current_cp = ChargepointModel.objects.filter(pk=self.id).get()
         if connector_id != 0:
-            connector_to_update = ConnectorModel.objects.filter(chargepoint=current_cp, connectorid=connector_id)
-            if connector_to_update.exists():
-                connector_to_update.update(connector_status = status)
-            else:
+            try:
+                connector_to_update = ConnectorModel.objects.filter(chargepoint=current_cp, connectorid=connector_id).get()
+                connector_to_update.connector_status = status
+            except ConnectorModel.DoesNotExist:                
+                connector_to_update = None
                 ConnectorModel.objects.create(
                     uuid = uuid.uuid4(),
                     connectorid = connector_id,
@@ -99,8 +108,20 @@ class ChargePoint16(cp):
                     chargepoint = current_cp
                 )
         else:
+            connector_to_update = None
             current_cp.chargepoint_status = status
             current_cp.save()
+        
+        StatusnotificationModel.objects.create(
+            connector = connector_to_update,
+            chargepoint = current_cp,
+            error_code = error_code,
+            info = kwargs.get('info', None),
+            status = status,
+            timestamp = kwargs.get('timestamp', timezone.now()),
+            vendor_id = kwargs.get('vendor_id', None),
+            vendor_error_code = kwargs.get('vendor_error_code', None)
+        )
         
         return call_result.StatusNotificationPayload()
 
@@ -114,6 +135,8 @@ class ChargePoint16(cp):
     @on(ocpp_v16_enums.Action.StartTransaction)
     def on_startTransaction(self, connector_id, id_tag, meter_start, timestamp, **kwargs):
 
+        current_cp = ChargepointModel.objects.filter(pk=self.id).get()
+
         new_transaction = TransactionModel.objects.create(
             start_transaction_timestamp = timestamp,
             wh_meter_start = meter_start,
@@ -125,6 +148,10 @@ class ChargePoint16(cp):
         
         if result["status"] == ocpp_v16_enums.AuthorizationStatus.accepted:
             new_transaction.id_tag = idTagModel.objects.get(idToken=id_tag)
+            try:
+                new_transaction.connector = ConnectorModel.objects.filter(connectorid=connector_id, chargepoint=current_cp).get()
+            except ConnectorModel.DoesNotExist:
+                pass
             reservation_id = kwargs.get('reservation_id', None)
             if reservation_id is not None:
                 ReservationModel.objects.filter(connector__chargepoint__chargepoint_id = self.id, reservation_id=reservation_id).delete()

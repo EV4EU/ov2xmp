@@ -3,29 +3,23 @@ from django.urls import path, include, re_path
 from django.contrib.auth import views as auth_views
 from django.conf import settings
 from django.conf.urls.static import static
+
 from chargepoint.views import ChargepointApiView, ChargepointDetailApiView
 from connector.views import ConnectorApiView, ConnectorDetailApiView
 from chargingprofile.views import ChargingprofileApiView, ChargingprofileDetailApiView
 from idtag.views import IdtagApiView, IdtagDetailApiView
-from .views import *
 from tasks.views import TasksApiView, TasksDetailApiView
+from api.views import *
+from heartbeat.views import HeartbeatApiView, HeartbeatSearchApiView
+from location.views import LocationApiView, LocationDetailApiView
+from reservation.views import ReservationApiView, ReservationDetailApiView
+from statusnotification.views import StatusnotificationApiView, StatusnotificationSearchApiView
+from transaction.views import TransactionApiView, TransactionDetailApiView, TransactionSearchApiView
+
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
 
 
 urlpatterns = [
-
-
-    #path('', TemplateView.as_view(
-    #    template_name='swagger-ui.html',
-    #    extra_context={'schema_url':'openapi-schema'}
-    #), name='swagger-ui'),
-    
-    #path('schema/', get_schema_view(
-    #    title="O-V2X-MP REST API",
-    #    description="The description of the REST API provided by the O-V2X-MP.",
-    #    version="1.0.0"
-    #), name='openapi-schema'),
-
     path('', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
     path('schema/', SpectacularAPIView.as_view(), name='schema'),
     path('redoc/', SpectacularRedocView.as_view(), name='redoc'),
@@ -44,6 +38,22 @@ urlpatterns = [
 
     path('task/', TasksApiView.as_view()),
     path('task/<str:task_id>/', TasksDetailApiView.as_view()),
+
+    path('heartbeat/<str:heartbeat_id>/', HeartbeatApiView.as_view()),
+    path('heartbeat/search/<str:chargepoint_id>/', HeartbeatSearchApiView.as_view()),
+
+    path('location/', LocationApiView.as_view()),
+    path('location/<str:location_id>/', LocationDetailApiView.as_view()),
+
+    path('reservation/', ReservationApiView.as_view()),
+    path('reservation/<str:reservation_id>/', ReservationDetailApiView.as_view()),
+
+    path('statusnotification/<str:statusnotification_id>/', StatusnotificationApiView.as_view()),
+    path('statusnotification/search/<str:chargepoint_id>/', StatusnotificationSearchApiView.as_view()),
+
+    path('transaction/', TransactionApiView.as_view()),
+    path('transaction/<str:transaction_id>/', TransactionDetailApiView.as_view()),
+    path('transaction/search/<str:chargepoint_id>/', TransactionSearchApiView.as_view()),
 
     path('ocpp16/reset/', OcppResetApiView.as_view()),
     path('ocpp16/remotestarttransaction', OcppRemoteStartTrasactionApiView.as_view()),

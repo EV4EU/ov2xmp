@@ -29,4 +29,4 @@ class Chargepoint(models.Model):
     
     ocpp_version = models.CharField(max_length=9, choices=OcppProtocols.choices)
     last_heartbeat = models.DateTimeField(null=True)
-    location = models.ForeignKey(Location, on_delete=models.SET_NULL, null=True)
+    location = models.ForeignKey(Location, on_delete=models.SET_NULL, null=True, default=None)

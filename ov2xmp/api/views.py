@@ -8,6 +8,7 @@ from .serializers import *
 from .tasks import *
 from drf_spectacular.openapi import AutoSchema
 
+
 class OcppResetApiView(GenericAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = OcppResetSerializer

@@ -5,4 +5,4 @@ from chargepoint.models import Chargepoint
 # Create your models here.
 class Heartbeat(models.Model):
     timestamp = models.DateTimeField()
-    chargepoint_id = models.ForeignKey(Chargepoint, on_delete=models.CASCADE)
+    chargepoint = models.ForeignKey(Chargepoint, on_delete=models.CASCADE)

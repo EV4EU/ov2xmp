@@ -1,5 +1,6 @@
 from django.db import models
 from idtag.models import IdTag
+from connector.models import Connector
 
 
 class TransactionStatus(models.TextChoices):
@@ -11,6 +12,7 @@ class TransactionStatus(models.TextChoices):
 # Create your models here.
 class Transaction(models.Model):
     transaction_id = models.AutoField(primary_key=True)
+    connector = models.ForeignKey(Connector, on_delete=models.SET_NULL, default=None, null=True)
     start_transaction_timestamp = models.DateTimeField()
     stop_transaction_timestamp = models.DateTimeField(null=True)
     wh_meter_start = models.IntegerField()
