@@ -22,6 +22,9 @@ entity "ChargePoint" as chargepoint {
     * ocpp_version: CharField[9]
     * last_heartbeat: DateTimeField
     * <u>location</u>: Location
+    ---
+    - tarrif: CharField[255]
+    - XXX 
 }
 
 entity "ChargingProfile" as chargingprofile {
@@ -64,6 +67,7 @@ entity "Reservation" as reservation {
     * <u>connector</u>: Connector
     * reservation_id: IntegerField
     * expiry_date: DateTimeField
+    * status: CharField[15]
 }
 
 entity "StatusNotification" as statusnotification {
@@ -78,6 +82,7 @@ entity "StatusNotification" as statusnotification {
 
 entity "Transaction" as transaction {
     * **transaction_id**: AutoField
+    * <u>connector</u>: Connector
     * start_transaction_timestamp: DateTimeField
     * stop_transaction_timestamp: DateTimeField {optional}
     * wh_meter_start: IntegerField
@@ -104,25 +109,50 @@ entity "Location" as location {
     * postal_code: CharField[20]
     * street_address: CharField[255]
     * city: CharField[20]
-    * type: ???
+    * type: CharField[20]
     * name: CharField
 }
 
+entity "Sampledvalue" as sampledvalue {
+    * **uuid**: UUIDField
+    * <u>transaction</u>: Transaction
+    * timestamp: DateTimeField
+    * value: CharField[50]
+    * context: CharField[50] {optional}
+    * format: CharField[50] {optional}
+    * measurand: CharField[50] {optional}
+    * phase: CharField[50] {optional}
+    * location: CharField[50] {optional}
+    * unit: CharField[50] {optional}
+}
+
+entity "OCPP201_TariffandCost" as ocpp201_TarrifandCost {
+    * currency: CharField[15]
+    * idToken: CharField[255]
+    * tariff: CharField[20]
+    * totalcost: DecimalField
+    * totalcostfallbackmessage: CharField[3]
+    * <u>transaction_id</u>: Transaction
+}
+
 chargepoint }|--|| location
-connector }|-- chargepoint
+connector }|--|| chargepoint
+connector ||--o{ transaction
 
 user ||--o{ idtag
 user ||--|| profile
 
 transaction }o--|| idtag
+transaction }o--o| chargingprofile
+transaction ||--o{ sampledvalue
 
 heartbeat }o--|| chargepoint
-
+statusnotification }|--|| connector
 reservation }o--|| connector
 
-transaction }o--o| chargingprofile
 
-statusnotification }|--|| connector
+ocpp201_TarrifandCost }|--|| chargepoint
+
 
 @enduml
 ```

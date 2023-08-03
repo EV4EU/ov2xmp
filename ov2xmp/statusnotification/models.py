@@ -2,11 +2,12 @@ from django.db import models
 from connector.models import Connector
 from chargepoint.models import Chargepoint
 from ocpp.v16 import enums as enums_v16 #ChargePointErrorCode
+from uuid import uuid4
 
 
 # Create your models here.
 class Statusnotification(models.Model):
-    id = models.AutoField(primary_key=True)
+    uuid = models.UUIDField(primary_key=True, default=uuid4, editable=False)
     connector = models.ForeignKey(Connector, on_delete=models.CASCADE, null=True, default=None)
     chargepoint = models.ForeignKey(Chargepoint, on_delete=models.CASCADE)
     error_code = models.CharField(choices=[(i.value, i.value) for i in enums_v16.ChargePointErrorCode], max_length=50)

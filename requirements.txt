@@ -18,3 +18,4 @@ redis
 requests
 sanic
 websockets
+django-countries

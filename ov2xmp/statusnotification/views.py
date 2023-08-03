@@ -63,5 +63,5 @@ class StatusnotificationSearchApiView(GenericAPIView):
         else:
             statusnotification_objects = Statusnotification.objects.filter(connector__chargepoint__chargepoint_id=chargepoint_id)
 
-        serializer = StatusnotificationSerializer(statusnotification_objects)
+        serializer = StatusnotificationSerializer(statusnotification_objects, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)

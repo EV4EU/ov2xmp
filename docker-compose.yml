@@ -22,6 +22,15 @@ services:
       - 5432:5432
     env_file:
       - ./.env
+  
+  pgadmin4:
+    hostname: pgadmin4
+    image: dpage/pgadmin4:latest
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=user@domain.com
+      - PGADMIN_DEFAULT_PASSWORD=SuperSecret
+    ports:
+      - '5444:80'
 
 volumes:
   redis_data:

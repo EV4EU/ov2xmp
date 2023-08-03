@@ -9,6 +9,7 @@ from django.core.validators import BaseValidator
 import jsonschema
 import jsonschema.exceptions
 from django.core.exceptions import ValidationError
+from uuid import uuid4
 
 
 class JSONSchemaValidator(BaseValidator):
@@ -95,7 +96,8 @@ class Chargingprofile(models.Model):
         "additionalProperties": False,
     }
 
-    chargingprofile_id = models.IntegerField(primary_key=True)
+    #uuid = models.UUIDField(primary_key=True, default=uuid4, editable=False)
+    chargingprofile_id = models.AutoField(primary_key=True)
     transaction_id = models.ForeignKey(Transaction, on_delete=models.SET_NULL, default=None, null=True, blank=True)
     stack_level = models.IntegerField()
     chargingprofile_purpose = models.CharField(choices=[(i.value, i.value) for i in enums_v16.ChargingProfilePurposeType], default=enums_v16.ChargingProfilePurposeType.charge_point_max_profile.value, max_length=21)
