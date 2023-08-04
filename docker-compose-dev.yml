@@ -1,0 +1,137 @@
+version: '3.8'
+services:
+  ov2xmp-redis:
+    container_name: ov2xmp-redis
+    hostname: ov2xmp-redis
+    image: redis:7.2-rc-alpine
+    restart: always
+    ports:
+      - '6379:6379'
+    command: redis-server --save 20 1 --loglevel warning
+    volumes: 
+      - ov2xmp_redis_data:/data
+    networks:
+      - ov2xmp-network
+
+  ov2xmp-postgres:
+    image: postgres:15.3-alpine3.18
+    restart: always
+    container_name: ov2xmp-postgres
+    hostname: ov2xmp-postgres
+    volumes:
+      - ov2xmp_db_data:/var/lib/postgresql/data/
+    ports:
+      - 5432:5432
+    env_file:
+      - ./postgres/.env
+    networks:
+      - ov2xmp-network
+ 
+  ov2xmp-pgadmin4:
+    hostname: ov2xmp-pgadmin4
+    image: dpage/pgadmin4:latest
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=user@domain.com
+      - PGADMIN_DEFAULT_PASSWORD=SuperSecret
+    ports:
+      - '5444:80'
+    networks:
+      - ov2xmp-network
+    depends_on:
+      - ov2xmp-postgres
+
+  ov2xmp-filebrowser:
+    image: filebrowser/filebrowser:latest
+    ports:
+      - 8188:80
+    volumes:
+      - filebrowser-root:/srv
+      - filebrowser-db:/database.db
+      - ./filebrowser/filebrowser.json:/.filebrowser.json
+    networks:
+      - ov2xmp-network
+  
+  ov2xmp-ftp-server:
+    image: ov2xmp-ftp-server:latest
+    network_mode: "host"
+    volumes:
+      - filebrowser-root:/files
+
+  ov2xmp-http-file-server:
+    image: ov2xmp-http-file-server:latest
+    ports:
+      - 8881:80
+    volumes:
+      - filebrowser-root:/files
+    networks:
+      - ov2xmp-network
+
+  ov2xmp-django:
+    container_name: ov2xmp-django
+    hostname: ov2xmp-django
+    restart: always
+    image: ov2xmp-django:latest
+    volumes:
+      - ov2xmp_static_volume:/code/static
+      - ov2xmp_media_volume:/code/media
+    ports:
+      - 8000:8000
+      - 9000:9000
+    env_file:
+      - ./ov2xmp-django/.env-docker
+    depends_on:
+      - ov2xmp-redis
+      - ov2xmp-postgres
+      - ov2xmp-cdr-db
+    networks:
+      - ov2xmp-network
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  ov2xmp-nginx:
+    restart: always
+    container_name: ov2xmp-nginx
+    hostname: ov2xmp-nginx
+    image: nginx:stable
+    volumes:
+      - ov2xmp_static_volume:/code/static
+      - ov2xmp_media_volume:/code/media
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx/tls:/etc/nginx/tls
+    ports:
+      - 8843:443
+    depends_on:
+      - ov2xmp-django
+    networks:
+      - ov2xmp-network
+
+  ov2xmp-cdr-db:
+    image: mongo:4.4.19-rc2
+    hostname: cdr-db
+    container_name: cdr-db
+    ports:
+      - 27017:27017     
+    environment:
+      - MONGODB_INITDB_ROOT_USERNAME=user
+      - MONGODB_INITDB_ROOT_PASSWORD=pass
+    volumes:
+      - ov2xmp_cdr_data:/data/db     
+    networks:
+      - ov2xmp-network
+
+
+networks:
+  ov2xmp-network:
+    driver: bridge
+
+
+volumes:
+  ov2xmp_redis_data:
+  ov2xmp_db_data:
+  ov2xmp_cdr_data:
+  filebrowser-db:
+  filebrowser-root:
+  ov2xmp_static_volume:
+  ov2xmp_media_volume:

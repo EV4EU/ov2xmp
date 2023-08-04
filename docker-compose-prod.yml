@@ -9,21 +9,21 @@ services:
       - '6379:6379'
     command: redis-server --save 20 1 --loglevel warning
     volumes: 
-      - redis_data:/data
+      - ov2xmp_redis_data:/data
     networks:
       - ov2xmp-network
 
-  ov2xmp-db:
+  ov2xmp-postgres:
     image: postgres:15.3-alpine3.18
     restart: always
-    container_name: ov2xmp-db
-    hostname: ov2xmp-db
+    container_name: ov2xmp-postgres
+    hostname: ov2xmp-postgres
     volumes:
       - ov2xmp_db_data:/var/lib/postgresql/data/
     ports:
       - 5432:5432
     env_file:
-      - ./.env
+      - ./postgres/.env
     networks:
       - ov2xmp-network
  
@@ -37,6 +37,8 @@ services:
       - '5444:80'
     networks:
       - ov2xmp-network
+    depends_on:
+      - ov2xmp-postgres
 
   ov2xmp-filebrowser:
     image: filebrowser/filebrowser:latest
@@ -45,18 +47,18 @@ services:
     volumes:
       - filebrowser-root:/srv
       - filebrowser-db:/database.db
-      - ./docker/filebrowser/filebrowser.json:/.filebrowser.json
+      - ./filebrowser/filebrowser.json:/.filebrowser.json
     networks:
       - ov2xmp-network
   
-  ftp-server:
+  ov2xmp-ftp-server:
     image: ev4eu-ftpd:latest
     network_mode: "host"
     volumes:
       - filebrowser-root:/files
 
-  http-file-server:
-    image: ev4eu-httpfileserver:latest
+  ov2xmp-http-file-server:
+    image: ev4eu-http-file-server:latest
     ports:
       - 8881:80
     volumes:
@@ -72,14 +74,15 @@ services:
     volumes:
       - ov2xmp_static_volume:/code/static
       - ov2xmp_media_volume:/code/media
-    expose:
-      - 8000
-      - 9000
+    ports:
+      - 8000:8000
+      - 9000:9000
     env_file:
-      - ./ov2xmp/.env
+      - ./ov2xmp-django/.env-prod
     depends_on:
-      - sdndashboard-db
-      - zoo
+      - ov2xmp-redis
+      - ov2xmp-postgres
+      - ov2xmp-cdr-db
     networks:
       - ov2xmp-network
     logging:
@@ -99,10 +102,12 @@ services:
       - ./nginx/tls:/etc/nginx/tls
     ports:
       - 8843:443
+    depends_on:
+      - ov2xmp-django
     networks:
       - ov2xmp-network
 
-  cdr-db:
+  ov2xmp-cdr-db:
     image: mongo:4.4.19-rc2
     hostname: cdr-db
     container_name: cdr-db
@@ -123,7 +128,7 @@ networks:
 
 
 volumes:
-  redis_data:
+  ov2xmp_redis_data:
   ov2xmp_db_data:
   filebrowser-db:
   filebrowser-root:
