@@ -78,7 +78,7 @@ services:
       - 8000:8000
       - 9000:9000
     env_file:
-      - ./ov2xmp-django/.env-prod
+      - ./ov2xmp-django/.env-docker
     depends_on:
       - ov2xmp-redis
       - ov2xmp-postgres
