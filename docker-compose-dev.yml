@@ -33,6 +33,7 @@ services:
     environment:
       - PGADMIN_DEFAULT_EMAIL=user@domain.com
       - PGADMIN_DEFAULT_PASSWORD=SuperSecret
+    restart: always
     ports:
       - '5444:80'
     networks:
@@ -42,6 +43,7 @@ services:
 
   ov2xmp-filebrowser:
     image: filebrowser/filebrowser:latest
+    restart: always
     ports:
       - 8188:80
     volumes:
@@ -53,12 +55,14 @@ services:
   
   ov2xmp-ftp-server:
     image: ov2xmp-ftp-server:latest
+    restart: always
     network_mode: "host"
     volumes:
       - filebrowser-root:/files
 
   ov2xmp-http-file-server:
     image: ov2xmp-http-file-server:latest
+    restart: always
     ports:
       - 8881:80
     volumes:
@@ -69,7 +73,6 @@ services:
   ov2xmp-django:
     container_name: ov2xmp-django
     hostname: ov2xmp-django
-    restart: always
     image: ov2xmp-django:latest
     volumes:
       - ov2xmp_static_volume:/code/static
@@ -111,6 +114,7 @@ services:
     image: mongo:4.4.19-rc2
     hostname: cdr-db
     container_name: cdr-db
+    restart: always
     ports:
       - 27017:27017     
     environment:

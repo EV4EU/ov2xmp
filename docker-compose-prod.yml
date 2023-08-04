@@ -52,13 +52,13 @@ services:
       - ov2xmp-network
   
   ov2xmp-ftp-server:
-    image: ev4eu-ftpd:latest
+    image: gitlab.trsc-ppc.gr:5050/ev4eu/ov2xmp/ftp-server:latest
     network_mode: "host"
     volumes:
       - filebrowser-root:/files
 
   ov2xmp-http-file-server:
-    image: ev4eu-http-file-server:latest
+    image: gitlab.trsc-ppc.gr:5050/ev4eu/ov2xmp/http-file-server:latest
     ports:
       - 8881:80
     volumes:
@@ -70,7 +70,7 @@ services:
     container_name: ov2xmp-django
     hostname: ov2xmp-django
     restart: always
-    image: gitlab.trsc-ppc.gr:5050/ev4eu/ov2xmp:latest
+    image: gitlab.trsc-ppc.gr:5050/ev4eu/ov2xmp/ov2xmp-django:latest
     volumes:
       - ov2xmp_static_volume:/code/static
       - ov2xmp_media_volume:/code/media
@@ -109,8 +109,8 @@ services:
 
   ov2xmp-cdr-db:
     image: mongo:4.4.19-rc2
-    hostname: cdr-db
-    container_name: cdr-db
+    hostname: ov2xmp-cdr-db
+    container_name: ov2xmp-cdr-db
     ports:
       - 27017:27017     
     environment:
