@@ -20,32 +20,29 @@ services:
     hostname: ov2xmp-postgres
     volumes:
       - ov2xmp_db_data:/var/lib/postgresql/data/
-    ports:
-      - 5432:5432
     env_file:
       - ./postgres/.env
     networks:
       - ov2xmp-network
  
   ov2xmp-pgadmin4:
+    container_name: ov2xmp-pgadmin4
     hostname: ov2xmp-pgadmin4
     image: dpage/pgadmin4:latest
     environment:
       - PGADMIN_DEFAULT_EMAIL=user@domain.com
       - PGADMIN_DEFAULT_PASSWORD=SuperSecret
     restart: always
-    ports:
-      - '5444:80'
     networks:
       - ov2xmp-network
     depends_on:
       - ov2xmp-postgres
 
   ov2xmp-filebrowser:
+    container_name: ov2xmp-filebrowser
+    hostname: ov2xmp-filebrowser
     image: filebrowser/filebrowser:latest
     restart: always
-    ports:
-      - 8188:80
     volumes:
       - filebrowser-root:/srv
       - filebrowser-db:/database.db
@@ -54,6 +51,8 @@ services:
       - ov2xmp-network
   
   ov2xmp-ftp-server:
+    container_name: ov2xmp-ftp-server
+    hostname: ov2xmp-ftp-server
     image: ov2xmp-ftp-server:latest
     restart: always
     network_mode: "host"
@@ -61,10 +60,10 @@ services:
       - filebrowser-root:/files
 
   ov2xmp-http-file-server:
+    container_name: ov2xmp-http-file-server
+    hostname: ov2xmp-http-file-server
     image: ov2xmp-http-file-server:latest
     restart: always
-    ports:
-      - 8881:80
     volumes:
       - filebrowser-root:/files
     networks:
@@ -77,9 +76,6 @@ services:
     volumes:
       - ov2xmp_static_volume:/code/static
       - ov2xmp_media_volume:/code/media
-    ports:
-      - 8000:8000
-      - 9000:9000
     env_file:
       - ./ov2xmp-django/.env-docker
     depends_on:
@@ -93,6 +89,38 @@ services:
         max-size: "10m"
         max-file: "3"
 
+  ov2xmp-csms:
+    container_name: ov2xmp-csms
+    hostname: ov2xmp-csms
+    image: ov2xmp-django:latest
+    command: ["sanic", "csms:app", "--host=0.0.0.0", "--port=9000"]
+    ports:
+      - 9000:9000
+    env_file:
+      - ./ov2xmp-django/.env-docker
+    depends_on:
+      - ov2xmp-django
+    networks:
+      - ov2xmp-network
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "3"
+  
+  ov2xmp-portainer:
+    container_name: ov2xmp-portainer
+    hostname: ov2xmp-portainer
+    image: portainer/portainer-ce:latest
+    command: -H unix:///var/run/docker.sock
+    restart: always
+    environment:
+      - BASE_URL=/portainer
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ov2xmp_portainer_data:/data
+    networks:
+      - ov2xmp-network
+
   ov2xmp-nginx:
     restart: always
     container_name: ov2xmp-nginx
@@ -104,16 +132,16 @@ services:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf
       - ./nginx/tls:/etc/nginx/tls
     ports:
-      - 8843:443
+      - 443:443
     depends_on:
       - ov2xmp-django
     networks:
       - ov2xmp-network
 
   ov2xmp-cdr-db:
+    container_name: ov2xmp-cdr-db
+    hostname: ov2xmp-cdr-db
     image: mongo:4.4.19-rc2
-    hostname: cdr-db
-    container_name: cdr-db
     restart: always
     ports:
       - 27017:27017     
@@ -139,3 +167,4 @@ volumes:
   filebrowser-root:
   ov2xmp_static_volume:
   ov2xmp_media_volume:
+  ov2xmp_portainer_data:
