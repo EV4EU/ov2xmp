@@ -50,11 +50,6 @@ entity "Connector" as connector {
     * <u>chargepoint</u>: Chargepoint
 }
 
-entity "Heartbeat" as heartbeat {
-    * timestamp: DateTimeField
-    * <u>chargepoint</u>: Chargepoint
-}
-
 entity "IdTag" as idtag {
     * **idToken**: CharField[255]
     * expiry_date: DateTimeField[] {optional}
@@ -71,7 +66,9 @@ entity "Reservation" as reservation {
 }
 
 entity "StatusNotification" as statusnotification {
-    * <u>connector</u>: Connector
+    * **uuid**: UUIDField
+    * <u>connector</u>: Connector {optional}
+    * <u>chargepoint</u>: Chargepoint
     * error_code: CharField[50]
     * info: CharField[50] {optional}
     * status: CharField[50]
@@ -94,7 +91,17 @@ entity "Transaction" as transaction {
 }
 
 entity "User" as user {
-
+    * **id**: Integer
+    * username: CharField[150]
+    * password: CharField[128]
+    * email: CharField[150] {optional}
+    * first_name: CharField[150] {optional}
+    * last_name: CharField[150] {optional}
+    * last_login: DateTimeField {optional}
+    * is_superuser: BooleanField
+    * is_staff: BooleanField
+    * is_active: BooleanField
+    * date_joined: DateTimeField
 }
 
 entity "Profile" as profile {
@@ -146,8 +153,8 @@ transaction }o--|| idtag
 transaction }o--o| chargingprofile
 transaction ||--o{ sampledvalue
 
-heartbeat }o--|| chargepoint
-statusnotification }|--|| connector
+statusnotification }o--o| connector
+statusnotification }|--|| chargepoint
 reservation }o--|| connector
 
 

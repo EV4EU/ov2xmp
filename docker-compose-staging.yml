@@ -18,8 +18,6 @@ services:
     restart: always
     container_name: ov2xmp-postgres
     hostname: ov2xmp-postgres
-    ports:
-      - 5432:5432
     volumes:
       - ov2xmp_db_data:/var/lib/postgresql/data/
     env_file:
@@ -71,6 +69,45 @@ services:
     networks:
       - ov2xmp-network
 
+  ov2xmp-django:
+    container_name: ov2xmp-django
+    hostname: ov2xmp-django
+    restart: always
+    image: ov2xmp-django:latest
+    volumes:
+      - ov2xmp_static_volume:/code/static
+      - ov2xmp_media_volume:/code/media
+    env_file:
+      - ./ov2xmp-django/.env-docker
+    depends_on:
+      - ov2xmp-redis
+      - ov2xmp-postgres
+      - ov2xmp-cdr-db
+    networks:
+      - ov2xmp-network
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "3"
+  
+  ov2xmp-csms:
+    container_name: ov2xmp-csms
+    hostname: ov2xmp-csms
+    image: ov2xmp-django:latest
+    command: ["sanic", "csms:app", "--host=0.0.0.0", "--port=9000"]
+    ports:
+      - 9000:9000
+    env_file:
+      - ./ov2xmp-django/.env-docker
+    depends_on:
+      - ov2xmp-django
+    networks:
+      - ov2xmp-network
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "3"
+
   ov2xmp-portainer:
     container_name: ov2xmp-portainer
     hostname: ov2xmp-portainer
@@ -97,6 +134,8 @@ services:
       - ./nginx/tls:/etc/nginx/tls
     ports:
       - 443:443
+    depends_on:
+      - ov2xmp-django
     networks:
       - ov2xmp-network
 
