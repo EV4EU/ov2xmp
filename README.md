@@ -1,17 +1,24 @@
 # Open Vehicle-To-Grid Management Platform (O-V2X-MP)
 
-The Open Vehicle-To-Grid Management Platform (O-V2X-MP) is a set of micro-services that implement the operation of a Charging Station Managment System (CSMS). The system is composed of the following microservices:+
+The Open Vehicle-To-Grid Management Platform (O-V2X-MP) is a set of microservices that implement the operation of a Charging Station Managment System (CSMS). The system is composed of the following microservices:
 
-- `ov2xmp-django`: The main microservice of O-V2X-MP, that integrates a Django server and the OCPP server. The OCPP server implements all the OCPP operations according to OCPP 1.6 and 2.0.1, while the Django server implements high-logic, provides a RESTful API, enforces authentication/authorization, and provides persistent storage for the state of the EV charging infrastructure.
-- `ftp-server`: This microservice is a custom FTP server that provides access for EV chargers to upload files via FTP to the `filebrowser-root` docker volume.
-- `http-file-server`: This microservice is a custom HTTP server that allows EV chargers to upload or download files via HTTP to/from the `filebrowser-root` docker volume.
-- `filebrowser`: Based on the [[filebrowser.org]] project, it provides a user-friendly GUI for the user to access the contents of the `filebrowser-root` docker volume and download/upload files manually.
-- `nginx` acts as the reverse proxy and TLS termination proxy of O-V2X-MP. Currently, only `ov2xmp`
-- `postgres` provides the persistent storage for Django.
+- `ov2xmp-csms`: This microservice implements the OCPP server, which establishes and manages the sessions with the EV chargers. The CSMS imports the Django ORM, so it also updates the Django database about the state of the EV charging system.
+- `ov2xmp-django`: This microservice is the Django server, which is placed as intermediate between the user and the CSMS. Django preserves the state of the system, implements high-logic, provides a RESTful API to access the system state and the CSMS-initiated OCPP commands, and enforces authentication/authorization. Moreover, celery also runs in the same microservice.
+- `ov2xmp-postgres` provides the persistent storage for Django.
+- `ov2xmp-ftp-server`: This microservice is a custom FTP server that provides access for EV chargers to upload files via FTP to the `filebrowser-root` docker volume. The source code of this project is a git submodule of the main (`ov2xmp`) repo.
+- `ov2xmp-http-file-server`: This microservice is a custom HTTP server that allows EV chargers to upload or download files via HTTP to/from the `filebrowser-root` docker volume. The source code of this project is a git submodule of the main (`ov2xmp`) repo.
+- `ov2xmp-filebrowser`: Based on the [[filebrowser.org]] project, it provides a user-friendly GUI for the user to access the contents of the `filebrowser-root` docker volume and download/upload files manually.
+- `ov2xmp-nginx` acts as the reverse proxy and TLS termination proxy of O-V2X-MP.
+- `ov2xmp-pgadmin4` is a GUI for managing the `ov2xmp-postgres`.
+- `ov2xmp-portainer` is a GUI for managing the docker containers.
+- `ov2xmp-redis` is the backend for Django to support Django Channels. Through Django Channels, the Django backend can transmit data asynchronously to the frontend via WebSockets.
+- `ov2xmp-cdr-db` stores the OCPI Charge Detail Record of each transaction.
 
-## OV2XMP submodules
+> Please note that the `ov2xmp-django` and `ov2xmp-csms` services are deployed from the `ov2xmp-django` git submodule of the `ov2xmp` repo.
 
-### filebrowser
+## Configuration of the O-V2X-MP microservices
+
+### ov2xmp-filebrowser
 
 The `filebrowser.json` configuration file must be placed inside the `filebrowser` folder with the following content:
 
@@ -26,7 +33,7 @@ The `filebrowser.json` configuration file must be placed inside the `filebrowser
 }
 ```
 
-### ftp-server
+### ov2xmp-ftp-server
 
 The `config.json` configuration file must be placed inside the `ftp-server` folder with the following content:
 
@@ -37,7 +44,7 @@ The `config.json` configuration file must be placed inside the `ftp-server` fold
 }
 ```
 
-### http-file-server
+### ov2xmp-http-file-server
 
 The `config.json` configuration file must be placed inside the `http-file-server` folder with the following content:
 
@@ -48,86 +55,17 @@ The `config.json` configuration file must be placed inside the `http-file-server
 }
 ```
 
-### nginx
+### ov2xmp-nginx
 
 A folder named `tls` must be placed inside the `nginx` folder. The `tls` folder must contain a TLS certificate and TLS key to be used by nginx for TLS proxying.
 
-Moreover, a file named `nginx.conf` must be placed inside the `nginx` folder, with the following content:
+Moreover, a file named `nginx.conf` must be placed inside the `nginx` folder.
 
-```nginx
-user nginx;
-worker_processes auto;
-pcre_jit on;
-error_log /var/log/nginx/error.log warn;
-include /etc/nginx/modules/*.conf;
-
-events {
-    worker_connections 1024;
-}
-
-http {
-    include /etc/nginx/mime.types;
-    default_type application/octet-stream;
-    resolver 127.0.0.11 ipv6=off;
-    server_tokens off;
-    client_max_body_size 1m;
-    keepalive_timeout 65;
-    sendfile on;
-    tcp_nodelay on;
-
-    gzip on;
-    gzip_vary on;
-
-    log_format main '$remote_addr - $remote_user [$time_local] "$request" '
-            '$status $body_bytes_sent "$http_referer" '
-            '"$http_user_agent" "$http_x_forwarded_for"';
-
-    access_log /var/log/nginx/access.log main;
-
-    server {
-        listen       80 default_server;
-        server_name  _;
-
-        return 301 https://$host$request_uri;
-
-        location / {
-            root   /usr/share/nginx/html;
-            index  index.html index.htm;
-        }
-    }
-
-    server {
-        listen 443 ssl;
-
-        server_name _;
-
-        ssl_certificate /etc/nginx/tls/cert.pem;
-        ssl_certificate_key /etc/nginx/tls/key.pem;
-
-        location / {
-            proxy_pass http://ov2xmp-django:8000;
-            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-            proxy_set_header Host $host;
-            proxy_redirect off;
-        }
-
-        location /static {
-            alias /code/static;
-        }
-
-        location /media {
-            alias /code/media;
-        }
-
-    }
-}
-```
-
-### ov2xmp-django
+### ov2xmp-django and ov2xmp-csms
 
 Check the `README.md` in the `ov2xmp-django` submodule.
 
-## postgres
+## ov2xmp-postgres
 
 The `.env` file must be placed inside the `postgres` folder with the following content:
 
@@ -137,15 +75,29 @@ POSTGRES_USER=ev4eu
 POSTGRES_PASSWORD=XXXX
 ```
 
-## Deployment
+## O-V2X-MP Deployment
 
 Gitlab CI/CD has been configured for all submodules with custom code, i.e. `ov2xmp-django`, `ftp-server` and `http-file-server`. For each commit pushed to the main branch of any of these submodules, the CI pipeline is triggered automatically to produce a docker image, which is uploaded to the Gitlab docker registry.
 
-However, it is preferable sometimes to test the integrated docker images without pushing commits to the main branch. For these kind of tests (staging), the developer can build the docker image using the Dockerfiles, save the images on their machine and deploy them locally on a stage environment for testing.
+However, it is preferable sometimes to test the integrated docker images without pushing commits to the main branch. Fpr this purpose, there are three kinds of deployment:
+
+- **dev**: This setup deploys only the infrastructure docker containers (all of them, except `ov2xmp-django` and `ov2xmp-csms`). Django, CSMS and Celery are deployed manually from source code on the development VM, using the command line. This deployment is prefered during development and testing, since the new code can be immediately tested. For this deployment, `.env-local` configures Django.
+- **staging**: This setup imitates the production deployment, however, local docker images are used instead of those stored in the Gitlab registry. The idea behind this is that the developer may need to test the integrated version of `ov2xmp-django` and `ov2xmp-csms` before commiting the changes and pushing to the Gitlab repo.
+- **production**: This is the production deployment which uses the official docker images that are available in the Gitlab repo.
+
+### Deploy O-V2X-MP in development environment
+
+1. Ensure that the configuration of all OV2XMP modules is correct.
+2. Check the `.env-local` file of `ov2xmp-django`.
+3. Deploy the infrastructure docker containers with:
+
+   ```sh
+   docker-compose -f docker-compose-dev.yml up -d
+   ```
+
+4. Check the `ov2xmp-django/README.md` file for instructions to deploy from source code.
 
 ### Deploy O-V2X-MP in stage environment
-
-Deployment in staging mode assumes the usage of the local docker images, instead of those stored in the Gitlab registry. To deploy in a stage environment, follow the steps bellow:
 
 1. Enter the `ftp-server` directory and build the docker image.
 
@@ -176,10 +128,9 @@ docker-compose -f docker-compose-dev.yml up -d
 
 ### Deploy O-V2X-MP in production
 
-The main difference in production is that the docker images are already available in the Gitlab registry.
-
-To deploy in production, use the corresponding docker-compose file:
+To deploy in production, login to the gitlab registry and use the corresponding docker-compose file:
 
 ```sh
-docker-compose -f docker-compose-dev.yml up -d
+docker login gitlab.trsc-ppc.gr:5050
+docker-compose -f docker-compose-prod.yml up -d
 ```
