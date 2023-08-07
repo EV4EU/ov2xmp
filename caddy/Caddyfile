@@ -1,0 +1,33 @@
+ov2xmp.trsc-ppc.gr {  
+    
+    handle_path /http/files/* {
+        root * /http/
+        file_server browse
+    }
+    
+    reverse_proxy /http/upload/ ov2xmp-http-file-server:80
+
+    reverse_proxy /filebrowser/* ov2xmp-filebrowser
+    
+    reverse_proxy /pgadmin4/* {
+        header_up X-Script-Name "/pgadmin4"
+        to ov2xmp-pgadmin4
+    }
+     
+    handle_path /portainer/* {
+        uri strip_prefix portainer
+        reverse_proxy ov2xmp-portainer:9000
+    }
+    
+    handle_path /static/* {
+        root * /code/static/
+        file_server
+    }
+
+    handle_path /media/* {
+        root * /code/media/
+        file_server
+    }
+        
+    reverse_proxy * ov2xmp-django:8000
+}

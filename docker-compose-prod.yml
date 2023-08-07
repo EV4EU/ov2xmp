@@ -122,22 +122,22 @@ services:
     networks:
       - ov2xmp-network
 
-  ov2xmp-nginx:
+  ov2xmp-caddy:
+    image: caddy:2
+    container_name: ov2xmp-caddy
     restart: always
-    container_name: ov2xmp-nginx
-    hostname: ov2xmp-nginx
-    image: nginx:stable
+    ports:
+      - 80:80
+      - 443:443
     volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
       - ov2xmp_static_volume:/code/static
       - ov2xmp_media_volume:/code/media
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
-      - ./nginx/tls:/etc/nginx/tls
-    ports:
-      - 443:443
-    depends_on:
-      - ov2xmp-django
+      - ov2xmp_caddy_data:/data
+      - ov2xmp_caddy_config:/config
+      - filebrowser-root:/http
     networks:
-      - ov2xmp-network
+      - ov2xmp-network    
 
   ov2xmp-cdr-db:
     container_name: ov2xmp-cdr-db
@@ -169,3 +169,5 @@ volumes:
   ov2xmp_static_volume:
   ov2xmp_media_volume:
   ov2xmp_portainer_data:
+  ov2xmp_caddy_data:
+  ov2xmp_caddy_config:
