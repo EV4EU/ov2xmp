@@ -1,3 +1,8 @@
-localhost {
-    import Caddyfile
+{
+    debug
+    local_certs
+}
+
+https://ov2xmp-caddy {
+    import caddyfile-base
 }
