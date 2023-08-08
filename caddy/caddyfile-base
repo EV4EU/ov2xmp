@@ -1,4 +1,4 @@
-ov2xmp.trsc-ppc.gr {  
+(main) {  
     
     handle_path /http/files/* {
         root * /http/

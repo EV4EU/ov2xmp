@@ -130,12 +130,15 @@ services:
       - 80:80
       - 443:443
     volumes:
-      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./caddy/caddy-base:/etc/caddy/caddy-base:ro
+      - ./caddy/caddy-prod:/etc/caddy/Caddyfile:ro
       - ov2xmp_static_volume:/code/static
       - ov2xmp_media_volume:/code/media
       - ov2xmp_caddy_data:/data
       - ov2xmp_caddy_config:/config
       - filebrowser-root:/http
+    env_file:
+      - ./ov2xmp-django/.env-docker
     networks:
       - ov2xmp-network    
 

@@ -1,0 +1,3 @@
+{$CADDY_PUBLIC_FQDN} {
+    import Caddyfile
+}
