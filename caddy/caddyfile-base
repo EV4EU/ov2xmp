@@ -3,7 +3,10 @@ handle_path /http/files/* {
     file_server browse
 }
 
-reverse_proxy /http/upload/ ov2xmp-http-file-server:80
+handle_path /http/upload/ {
+    rewrite * /
+    reverse_proxy ov2xmp-http-file-server
+}
 
 reverse_proxy /filebrowser/* ov2xmp-filebrowser
 
@@ -13,7 +16,7 @@ reverse_proxy /pgadmin4/* {
 }
     
 handle_path /portainer/* {
-    uri strip_prefix portainer
+    
     reverse_proxy ov2xmp-portainer:9000
 }
 

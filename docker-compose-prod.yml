@@ -108,6 +108,22 @@ services:
         max-size: "10m"
         max-file: "3"
 
+  ov2xmp-celery:
+    container_name: ov2xmp-celery
+    hostname: ov2xmp-celery
+    image: gitlab.trsc-ppc.gr:5050/ev4eu/ov2xmp/ov2xmp-django:latest
+    command: "celery -A ov2xmp worker -l info"
+    env_file:
+      - ./ov2xmp-django/.env-docker
+    depends_on:
+      - ov2xmp-django
+    networks:
+      - ov2xmp-network
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "3"
+
   ov2xmp-portainer:
     container_name: ov2xmp-portainer
     hostname: ov2xmp-portainer
@@ -131,8 +147,7 @@ services:
       - 80:80
       - 443:443
     volumes:
-      - ./caddy/caddyfile-dev:/etc/caddy/Caddyfile:ro
-      #- ./caddy/caddyfile-prod:/etc/caddy/Caddyfile:ro
+      - ./caddy/caddyfile-prod:/etc/caddy/Caddyfile:ro
       - ./caddy/caddyfile-base:/etc/caddy/caddyfile-base:ro
       - ov2xmp_static_volume:/code/static
       - ov2xmp_media_volume:/code/media

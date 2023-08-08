@@ -1,8 +1,7 @@
 {
-    debug
     local_certs
 }
 
-https://ov2xmp-caddy {
+{$CADDY_INTERNAL_FQDN} {
     import caddyfile-base
 }

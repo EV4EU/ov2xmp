@@ -108,6 +108,22 @@ services:
         max-size: "10m"
         max-file: "3"
 
+  ov2xmp-celery:
+    container_name: ov2xmp-celery
+    hostname: ov2xmp-celery
+    image: ov2xmp-django:latest
+    command: "celery -A ov2xmp worker -l info"
+    env_file:
+      - ./ov2xmp-django/.env-docker
+    depends_on:
+      - ov2xmp-django
+    networks:
+      - ov2xmp-network
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "3"
+
   ov2xmp-portainer:
     container_name: ov2xmp-portainer
     hostname: ov2xmp-portainer
@@ -173,3 +189,5 @@ volumes:
   ov2xmp_static_volume:
   ov2xmp_media_volume:
   ov2xmp_portainer_data:
+  ov2xmp_caddy_data:
+  ov2xmp_caddy_config:
