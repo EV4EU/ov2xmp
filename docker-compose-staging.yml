@@ -159,18 +159,56 @@ services:
     networks:
       - ov2xmp-network    
 
-  ov2xmp-cdr-db:
-    container_name: ov2xmp-cdr-db
-    hostname: ov2xmp-cdr-db
-    image: mongo:4.4.19-rc2
+  ov2xmp-elasticsearch:
+    container_name: ov2xmp-elasticsearch
+    hostname: ov2xmp-elasticsearch
     restart: always
-    ports:
-      - 27017:27017     
-    environment:
-      - MONGODB_INITDB_ROOT_USERNAME=user
-      - MONGODB_INITDB_ROOT_PASSWORD=pass
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.9.0-amd64
     volumes:
-      - ov2xmp_cdr_data:/data/db     
+      - "ov2xmp-elasticsearch-data:/usr/share/elasticsearch/data"
+      - "./elk/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml"
+    env_file:
+      - ./elk/.env-es
+    networks:
+      - ov2xmp-network
+
+  ov2xmp-elasticsearch-setup:
+    container_name: ov2xmp-elasticsearch-setup
+    image: ubuntu:latest
+    volumes:
+      - "./elk/elk-setup.sh:/root/elk-setup.sh"
+    command: 'sh -c "apt update && apt install -y curl && chmod 777 /root/elk-setup.sh && /root/elk-setup.sh"'
+    env_file:
+      - ./elk/.env-es
+    networks:
+      - ov2xmp-network    
+    depends_on:
+      - ov2xmp-elasticsearch
+
+  ov2xmp-logstash:
+    hostname: ov2xmp-logstash
+    container_name: ov2xmp-logstash
+    image: docker.elastic.co/logstash/logstash:8.9.0-amd64
+    restart: always 
+    volumes:
+      - "./elk/ov2xmp-normalizer.conf:/usr/share/logstash/config/ov2xmp-normalizer.conf"
+    command: bash -c "logstash -f /usr/share/logstash/config/ov2xmp-normalizer.conf --config.reload.automatic"
+    env_file:
+      - ./elk/.env-logstash
+    depends_on:
+      - ov2xmp-elasticsearch
+    networks:
+      - ov2xmp-network
+
+  ov2xmp-kibana:
+    hostname: ov2xmp-kibana
+    container_name: ov2xmp-kibana
+    image: docker.elastic.co/kibana/kibana:8.9.0-amd64
+    restart: always  
+    env_file:
+      - ./elk/.env-kibana
+    depends_on:
+      - ov2xmp-elasticsearch  
     networks:
       - ov2xmp-network
 
@@ -183,7 +221,6 @@ networks:
 volumes:
   ov2xmp_redis_data:
   ov2xmp_db_data:
-  ov2xmp_cdr_data:
   filebrowser-db:
   filebrowser-root:
   ov2xmp_static_volume:
@@ -191,3 +228,4 @@ volumes:
   ov2xmp_portainer_data:
   ov2xmp_caddy_data:
   ov2xmp_caddy_config:
+  ov2xmp-elasticsearch-data:

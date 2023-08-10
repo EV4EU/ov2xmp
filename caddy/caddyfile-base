@@ -16,8 +16,12 @@ reverse_proxy /pgadmin4/* {
 }
     
 handle_path /portainer/* {
-    
     reverse_proxy ov2xmp-portainer:9000
+}
+
+route /kibana/* {
+    uri strip_prefix /kibana
+    reverse_proxy ov2xmp-kibana:5601
 }
 
 handle_path /static/* {
@@ -29,5 +33,5 @@ handle_path /media/* {
     root * /code/media/
     file_server
 }
-    
+
 reverse_proxy * ov2xmp-django:8000
