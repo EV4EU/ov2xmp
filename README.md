@@ -3,7 +3,7 @@
 The Open Vehicle-To-Grid Management Platform (O-V2X-MP) is a set of microservices that implement the operation of a Charging Station Managment System (CSMS). The system is composed of the following microservices:
 
 - `ov2xmp-csms`: This microservice implements the OCPP server, which establishes and manages the sessions with the EV chargers. The CSMS imports the Django ORM, so it also updates the Django database about the state of the EV charging system.
-- `ov2xmp-django`: This microservice is the Django server, which is placed as intermediate between the user and the CSMS. Django preserves the state of the system, implements high-logic, provides a RESTful API to access the system state and the CSMS-initiated OCPP commands, and enforces authentication/authorization.
+- `ov2xmp-daphne`: This is the Daphne web server, which serves the Django project and is placed as intermediate between the user and the CSMS. Django preserves the state of the system, implements high-logic, provides a RESTful API to access the system state and the CSMS-initiated OCPP commands, and enforces authentication/authorization.
 - `ov2xmp-celery`: This microservice runs celery, which receives and executes tasks asynchronously.
 - `ov2xmp-postgres` provides the persistent storage for Django.
 - `ov2xmp-ftp-server`: This microservice is a custom FTP server that provides access for EV chargers to upload files via FTP to the `filebrowser-root` docker volume. The source code of this project is a git submodule of the main (`ov2xmp`) repo.
@@ -18,7 +18,7 @@ The Open Vehicle-To-Grid Management Platform (O-V2X-MP) is a set of microservice
 - `ov2xmp-kibana` is the GUI for managing the elasticsearch instance.
 - `ov2xmp-logstash` receives and handles the logs from the `ov2xmp` services (processing, formatting, output to one or multiple destinations).
 
-> Please note that the `ov2xmp-django` and `ov2xmp-csms` services are deployed from the same `ov2xmp-django` git submodule of the `ov2xmp` repo.
+> Please note that the `ov2xmp-daphne`, `ov2xmp-csms` and `ov2xmp-celery` microservices are deployed from the same `ov2xmp-django` git submodule of the `ov2xmp` repo.
 
 ## Configuration of the O-V2X-MP microservices
 
@@ -67,7 +67,7 @@ The Caddy server consists of three configuration files:
 - `caddyfile-dev` imports `caddyfile-base` and is appropriate for development and staging, since it requires a local FQDN and the usage of self-signed certificates. This version requires the `CADDY_PUBLIC_FQDN` env. variable to be set.
 - `caddyfile-prod` imports `caddyfile-base` and is suitable for production usage, requiring to specify a public FQDN that LetsEncrypt can use to obtain valid certificates. This version requires the `CADDY_PUBLIC_FQDN` env. variable to be set.
 
-### ov2xmp-django, ov2xmp-csms and ov2xmp-celery
+### ov2xmp-daphne, ov2xmp-csms and ov2xmp-celery
 
 Check the `README.md` in the `ov2xmp-django` submodule.
 
@@ -99,8 +99,8 @@ Gitlab CI/CD has been configured for all submodules with custom code, i.e. `ov2x
 
 However, it is preferable sometimes to test the integrated docker images without pushing commits to the main branch. Fpr this purpose, there are three kinds of deployment:
 
-- **dev**: This setup deploys only the infrastructure docker containers (all `ov2xmp-*` containers, except `ov2xmp-django`, `ov2xmp-csms` and `ov2xmp-celery`). Django, CSMS and Celery are deployed manually from source code on the development VM, using the command line. This deployment is prefered during development and testing, since the new code can be immediately tested. For this deployment, `.env-local` is loaded manually by the developer to configure Django.
-- **staging**: This setup replicates the production deployment, however, local docker images are used instead of those stored in the Gitlab registry. Moreover, the TLS termination proxy (caddy) uses self-signed certificates. The idea behind this deployment is that the developer may need to test the integrated version of `ov2xmp-django`, `ov2xmp-csms` and `ov2xmp-celery` before commiting the changes and pushing to the Gitlab repo.
+- **dev**: This setup deploys only the infrastructure docker containers (all `ov2xmp-*` containers, except `ov2xmp-daphne`, `ov2xmp-csms` and `ov2xmp-celery`). Django, CSMS and Celery are deployed manually from source code on the development VM, using the command line. This deployment is prefered during development and testing, since the new code can be immediately tested. For this deployment, `.env-local` is loaded manually by the developer to configure Django.
+- **staging**: This setup replicates the production deployment, however, local docker images are used instead of those stored in the Gitlab registry. Moreover, the TLS termination proxy (caddy) uses self-signed certificates. The idea behind this deployment is that the developer may need to test the integrated version of `ov2xmp-daphne`, `ov2xmp-csms` and `ov2xmp-celery` before commiting the changes and pushing to the Gitlab repo.
 - **production**: This is the production deployment which uses the official docker images that are available in the Gitlab repo. Moreover, it assumes that valid certificates are used, so `ov2xmp-caddy` should be pointed to a public domain.
 
 ### Deploy O-V2X-MP in development environment
