@@ -82,7 +82,6 @@ services:
     depends_on:
       - ov2xmp-redis
       - ov2xmp-postgres
-      - ov2xmp-cdr-db
     networks:
       - ov2xmp-network
     logging:
