@@ -34,4 +34,4 @@ handle_path /media/* {
     file_server
 }
 
-reverse_proxy * ov2xmp-django:8000
+reverse_proxy * ov2xmp-daphne:8000

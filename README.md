@@ -48,6 +48,16 @@ The `config.json` configuration file must be placed inside the `ftp-server` fold
 }
 ```
 
+The following URL must be provided to an EV charger that needs to access the FTP server:
+
+`ftp://<username>:<password>@<OV2XMP_Address>/files`
+
+Where:
+
+- `<username>` must be replaced with the username specified in `config.json`.
+- `<password>` must be replaced with the password specified in `config.json`.
+- `<OV2XMP_Address>` must be replaced with the IP address of the FQDN of OV2XMP.
+
 ### ov2xmp-http-file-server
 
 The `config.json` configuration file must be placed inside the `http-file-server` folder with the following content:
@@ -58,6 +68,16 @@ The `config.json` configuration file must be placed inside the `http-file-server
     "password": "The password of the user account"
 }
 ```
+
+The following URL must be provided to an EV charger that needs to access the HTTP server:
+
+`http://<username>:<password>@<OV2XMP_Address>/http/upload/`
+
+Where:
+
+- `<username>` must be replaced with the username specified in `config.json`.
+- `<password>` must be replaced with the password specified in `config.json`.
+- `<OV2XMP_Address>` must be replaced with the IP address of the FQDN of OV2XMP.
 
 ### ov2xmp-caddy
 
@@ -152,3 +172,21 @@ To deploy in production, login to the gitlab registry and use the corresponding 
 docker login gitlab.trsc-ppc.gr:5050
 docker-compose -f docker-compose-prod.yml up -d
 ```
+
+## Connecting EV Charging Stations
+
+### Production and Staging mode
+
+In order to connect an EV charger to O-V2X-MP, you need to provide the following connection URL to the EV charger:
+
+> `ws://{OV2XMP_FQDN}/ws/ocpp`
+
+Replace `{OV2XMP_FQDN}` with the valid FQDN of the platform. For example, it could be a public FQDN (`ov2xmp.trsc-ppc.gr`) if you are using the production deployment, or a local FQDN (`ov2xmp.trsc.net`) if you are using a local staging instance.
+
+### Development mode
+
+If the CSMS is deployed in development mode (i.e., directly from the source code), you need to specify the TCP port of the CSMS in the URL. So the URL should be something like this:
+
+> `ws://{OV2XMP_ADDRESS}:9000/ws/ocpp`
+
+Replace `{OV2XMP_ADDRESS}` with the local FQDN **OR** the IP address of the VM where the O-V2X-MP platform runs.

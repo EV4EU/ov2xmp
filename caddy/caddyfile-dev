@@ -5,3 +5,13 @@
 {$CADDY_INTERNAL_FQDN} {
     import caddyfile-base
 }
+
+http://{$CADDY_INTERNAL_FQDN} {
+    handle /ws/ocpp/* {
+        @websockets {
+            header Connection *Upgrade*
+            header Upgrade websocket
+        }
+        reverse_proxy @websockets http://ov2xmp-csms:9000
+    }
+}

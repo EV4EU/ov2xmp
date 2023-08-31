@@ -22,9 +22,9 @@ entity "ChargePoint" as chargepoint {
     * ocpp_version: CharField[9]
     * last_heartbeat: DateTimeField
     * <u>location</u>: Location
-    ---
+/'    ---
     - tarrif: CharField[255]
-    - XXX 
+    - XXX'/ 
 }
 
 entity "ChargingProfile" as chargingprofile {
@@ -133,6 +133,7 @@ entity "Sampledvalue" as sampledvalue {
     * unit: CharField[50] {optional}
 }
 
+/'
 entity "OCPP201_TariffandCost" as ocpp201_TarrifandCost {
     * currency: CharField[15]
     * idToken: CharField[255]
@@ -141,6 +142,7 @@ entity "OCPP201_TariffandCost" as ocpp201_TarrifandCost {
     * totalcostfallbackmessage: CharField[3]
     * <u>transaction_id</u>: Transaction
 }
+'/
 
 chargepoint }|--|| location
 connector }|--|| chargepoint
@@ -158,7 +160,7 @@ statusnotification }|--|| chargepoint
 reservation }o--|| connector
 
 
-ocpp201_TarrifandCost }|--|| chargepoint
+'/ocpp201_TarrifandCost }|--|| chargepoint'/
 
 
 @enduml
