@@ -173,6 +173,33 @@ docker login gitlab.trsc-ppc.gr:5050
 docker-compose -f docker-compose-prod.yml up -d
 ```
 
+## Accessing the O-V2X-MP REST API
+
+The O-V2X-MP can be accessed through the following URL:
+
+> `https://{OV2XMP_FQDN}/api/`
+
+Replace `{OV2XMP_FQDN}` with the valid FQDN of the platform. For example, it could be a public FQDN (`ov2xmp.trsc-ppc.gr`) if you are using the production deployment, or a local FQDN (`ov2xmp.trsc.net`) if you are using a local staging instance.
+
+All API requests must be authenticated by using a valid JSON Web Token (JWT). To get a JWT for your account, follow these steps:
+
+1. Scroll down to the `/api/token` request or visit the following URL: `https://{OV2XMP_FQDN}/api/#/token/token_create`.
+
+2. Click on `Try it out`.
+
+3. Inside the Request body, replace the values of `username` and `password` with the credentials provided to you for O-V2X-MP.
+
+4. Click on `Execute`.
+
+5. Scroll down a bit and copy the Response body. Inside the response, there is a refresh token and an access token. The access token is the authentication token whereas the refresh token can be used to renew the validity of the access token through the `/api/token/refresh/` endpoint.
+
+6. Scroll at the top of the Swagger page and click on the `Authorize` button.
+
+7. Paste the access token as the value of the `jwtAuth` authorization.
+
+8. Now, all requests made through the page are automatically authorized.
+
+
 ## Connecting EV Charging Stations
 
 ### Production and Staging mode
