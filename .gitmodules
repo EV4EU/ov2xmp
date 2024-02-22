@@ -1,9 +1,9 @@
 [submodule "ov2xmp-django"]
 	path = ov2xmp-django
-	url = https://gitlab.trsc-ppc.gr/ev4eu/ov2xmp/ov2xmp-django
+	url = https://github.com/EV4EU/ov2xmp-django
 [submodule "ftp-server"]
 	path = ftp-server
-	url = https://gitlab.trsc-ppc.gr/ev4eu/ov2xmp/ftp-server
+	url = https://github.com/EV4EU/ov2xmp-ftp-server
 [submodule "http-file-server"]
 	path = http-file-server
-	url = https://gitlab.trsc-ppc.gr/ev4eu/ov2xmp/http-file-server
+	url = https://github.com/EV4EU/ov2xmp-http-file-server
