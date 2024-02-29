@@ -29,7 +29,6 @@ entity "ChargePoint" as chargepoint {
 
 entity "ChargingProfile" as chargingprofile {
     * **chargingprofile_id**: IntegerField
-    * <u>transaction_id</u>: Transaction {optional}
     * stack_level: IntegerField
     * chargingprofile_purpose: CharField[21]
     * recurrency_kind: CharField[10] {optional}
@@ -88,6 +87,7 @@ entity "Transaction" as transaction {
     * <u>id_tag</u>: IdTag
     * reason_stopped: CharField[50] {optional}
     * status: CharField[15]
+    * chargingprofile: ChargingProfile {optional}
 }
 
 entity "User" as user {
@@ -152,9 +152,9 @@ user ||--o{ idtag
 user ||--|| profile
 
 transaction }o--|| idtag
-transaction }o--o| chargingprofile
-transaction ||--o{ sampledvalue
+chargingprofile ||--o{ transaction
 
+transaction ||--o{ sampledvalue
 statusnotification }o--o| connector
 statusnotification }|--|| chargepoint
 reservation }o--|| connector
