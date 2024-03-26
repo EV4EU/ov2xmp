@@ -73,7 +73,7 @@ services:
     container_name: ov2xmp-daphne
     hostname: ov2xmp-daphne
     restart: always
-    image: gitlab.trsc-ppc.gr:5050/ev4eu/ov2xmp/ov2xmp-django:latest
+    image: ghcr.io/ev4eu/ov2xmp-django:main
     volumes:
       - ov2xmp_static_volume:/code/static
       - ov2xmp_media_volume:/code/media
@@ -92,7 +92,7 @@ services:
   ov2xmp-csms:
     container_name: ov2xmp-csms
     hostname: ov2xmp-csms
-    image: gitlab.trsc-ppc.gr:5050/ev4eu/ov2xmp/ov2xmp-django:latest
+    image: ghcr.io/ev4eu/ov2xmp-django:main
     command: ["sanic", "csms:app", "--host=0.0.0.0", "--port=9000"]
     env_file:
       - ./ov2xmp-django/.env-docker
@@ -108,7 +108,7 @@ services:
   ov2xmp-celery:
     container_name: ov2xmp-celery
     hostname: ov2xmp-celery
-    image: gitlab.trsc-ppc.gr:5050/ev4eu/ov2xmp/ov2xmp-django:latest
+    image: ghcr.io/ev4eu/ov2xmp-django:main
     command: "celery -A ov2xmp worker -l info"
     env_file:
       - ./ov2xmp-django/.env-docker
