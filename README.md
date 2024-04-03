@@ -1,5 +1,10 @@
 # Open Vehicle-To-Grid Management Platform (O-V2X-MP)
 
+[![ov2xmp-django](https://github.com/EV4EU/ov2xmp-django/actions/workflows/docker-image.yml/badge.svg)](https://github.com/EV4EU/ov2xmp-django/actions/workflows/docker-image.yml) 
+  [![ov2xmp-ftp-server](https://github.com/EV4EU/ov2xmp-ftp-server/actions/workflows/docker-image.yml/badge.svg)](https://github.com/EV4EU/ov2xmp-ftp-server/actions/workflows/docker-image.yml) 
+  [![ov2xmp-http-file-server](https://github.com/EV4EU/ov2xmp-http-file-server/actions/workflows/docker-image.yml/badge.svg)](https://github.com/EV4EU/ov2xmp-http-file-server/actions/workflows/docker-image.yml) 
+
+
 The Open Vehicle-To-Grid Management Platform (O-V2X-MP) is a set of microservices that implement the operation of a Charging Station Managment System (CSMS). The system is composed of the following microservices:
 
 - `ov2xmp-csms`: This microservice implements the OCPP server, which establishes and manages the sessions with the EV chargers. The CSMS imports the Django ORM, so it also updates the Django database about the state of the EV charging system.
