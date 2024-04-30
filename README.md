@@ -120,13 +120,13 @@ Finally, `ov2xmp-elasticsearch-setup` utilises the `elk-setup.sh` script, which 
 
 ## O-V2X-MP Deployment
 
-Gitlab CI/CD has been configured for all submodules with custom code, i.e. `ov2xmp-django`, `ftp-server` and `http-file-server`. For each commit pushed to the main branch of any of these submodules, the CI pipeline is triggered automatically to produce a docker image, which is uploaded to the Gitlab docker registry.
+GitHub Actions have been configured for all submodules with custom code, i.e. `ov2xmp-django`, `ftp-server` and `http-file-server`. For each commit pushed to the main branch of any of these submodules, the CI pipeline is triggered automatically to produce a docker image, which is uploaded to the GitHub docker registry.
 
 However, it is preferable sometimes to test the integrated docker images without pushing commits to the main branch. Fpr this purpose, there are three kinds of deployment:
 
 - **dev**: This setup deploys only the infrastructure docker containers (all `ov2xmp-*` containers, except `ov2xmp-daphne`, `ov2xmp-csms` and `ov2xmp-celery`). Django, CSMS and Celery are deployed manually from source code on the development VM, using the command line. This deployment is prefered during development and testing, since the new code can be immediately tested. For this deployment, `.env-local` is loaded manually by the developer to configure Django.
-- **staging**: This setup replicates the production deployment, however, local docker images are used instead of those stored in the Gitlab registry. Moreover, the TLS termination proxy (caddy) uses self-signed certificates. The idea behind this deployment is that the developer may need to test the integrated version of `ov2xmp-daphne`, `ov2xmp-csms` and `ov2xmp-celery` before commiting the changes and pushing to the Gitlab repo.
-- **production**: This is the production deployment which uses the official docker images that are available in the Gitlab repo. Moreover, it assumes that valid certificates are used, so `ov2xmp-caddy` should be pointed to a public domain.
+- **staging**: This setup replicates the production deployment, however, local docker images are used instead of those stored in the GitHub docker registry. Moreover, the TLS termination proxy (caddy) uses self-signed certificates. The idea behind this deployment is that the developer may need to test the integrated version of `ov2xmp-daphne`, `ov2xmp-csms` and `ov2xmp-celery` before commiting the changes and pushing to the GitHub repo.
+- **production**: This is the production deployment which uses the official docker images that are available in the GitHub repo. Moreover, it assumes that valid certificates are used, so `ov2xmp-caddy` should be pointed to a public domain.
 
 ### Deploy O-V2X-MP in development environment
 
@@ -171,10 +171,10 @@ docker-compose -f docker-compose-staging.yml up -d
 
 ### Deploy O-V2X-MP in production
 
-To deploy in production, login to the gitlab registry and use the corresponding docker-compose file:
+To deploy in production, login to the GitHub registry and use the corresponding docker-compose file:
 
 ```sh
-docker login gitlab.trsc-ppc.gr:5050
+docker login ghcr.io -u USERNAME
 docker-compose -f docker-compose-prod.yml up -d
 ```
 
