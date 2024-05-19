@@ -172,4 +172,3 @@ volumes:
   ov2xmp_portainer_data:
   ov2xmp_caddy_data:
   ov2xmp_caddy_config:
-  ov2xmp-elasticsearch-data:

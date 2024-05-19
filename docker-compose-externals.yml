@@ -103,3 +103,4 @@ networks:
 volumes:
   zookeeper_data:
   kafka_data:
+  ov2xmp-elasticsearch-data:
