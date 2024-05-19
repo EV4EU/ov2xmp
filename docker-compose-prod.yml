@@ -53,7 +53,7 @@ services:
   ov2xmp-ftp-server:
     container_name: ov2xmp-ftp-server
     hostname: ov2xmp-ftp-server
-    image: gitlab.trsc-ppc.gr:5050/ev4eu/ov2xmp/ftp-server:latest
+    image: ghcr.io/ev4eu/ov2xmp-ftp-server:main
     restart: always
     network_mode: "host"
     volumes:
@@ -62,7 +62,7 @@ services:
   ov2xmp-http-file-server:
     container_name: ov2xmp-http-file-server
     hostname: ov2xmp-http-file-server
-    image: gitlab.trsc-ppc.gr:5050/ev4eu/ov2xmp/http-file-server:latest
+    image: ghcr.io/ev4eu/ov2xmp-http-file-server:main
     restart: always
     volumes:
       - filebrowser-root:/files
@@ -155,59 +155,6 @@ services:
       - ./ov2xmp-django/.env-docker
     networks:
       - ov2xmp-network    
-
-  ov2xmp-elasticsearch:
-    container_name: ov2xmp-elasticsearch
-    hostname: ov2xmp-elasticsearch
-    restart: always
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.9.0-amd64
-    volumes:
-      - "ov2xmp-elasticsearch-data:/usr/share/elasticsearch/data"
-      - "./elk/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml"
-    env_file:
-      - ./elk/.env-es
-    networks:
-      - ov2xmp-network
-
-  ov2xmp-elasticsearch-setup:
-    container_name: ov2xmp-elasticsearch-setup
-    image: ubuntu:latest
-    volumes:
-      - "./elk/elk-setup.sh:/root/elk-setup.sh"
-    command: 'sh -c "apt update && apt install -y curl && chmod 777 /root/elk-setup.sh && /root/elk-setup.sh"'
-    env_file:
-      - ./elk/.env-es
-    networks:
-      - ov2xmp-network    
-    depends_on:
-      - ov2xmp-elasticsearch
-
-  ov2xmp-logstash:
-    hostname: ov2xmp-logstash
-    container_name: ov2xmp-logstash
-    image: docker.elastic.co/logstash/logstash:8.9.0-amd64
-    restart: always 
-    volumes:
-      - "./elk/ov2xmp-normalizer.conf:/usr/share/logstash/config/ov2xmp-normalizer.conf"
-    command: bash -c "logstash -f /usr/share/logstash/config/ov2xmp-normalizer.conf --config.reload.automatic"
-    env_file:
-      - ./elk/.env-logstash
-    depends_on:
-      - ov2xmp-elasticsearch
-    networks:
-      - ov2xmp-network
-
-  ov2xmp-kibana:
-    hostname: ov2xmp-kibana
-    container_name: ov2xmp-kibana
-    image: docker.elastic.co/kibana/kibana:8.9.0-amd64
-    restart: always  
-    env_file:
-      - ./elk/.env-kibana
-    depends_on:
-      - ov2xmp-elasticsearch  
-    networks:
-      - ov2xmp-network
 
 
 networks:

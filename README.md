@@ -18,10 +18,6 @@ The Open Vehicle-To-Grid Management Platform (O-V2X-MP) is a set of microservice
 - `ov2xmp-pgadmin4` is a GUI for managing the `ov2xmp-postgres`.
 - `ov2xmp-portainer` is a GUI for managing the docker containers.
 - `ov2xmp-redis` is the backend for Django to support Django Channels. Through Django Channels, the Django backend can transmit data asynchronously to the frontend via WebSockets.
-- `ov2xmp-elasticsearch` stores the OCPI Charge Detail Record of each transaction as well as various system logs.
-- `ov2xmp-elasticsearch-setup` initiates the password of the `kibana_system` user (is executed only once and terminates).
-- `ov2xmp-kibana` is the GUI for managing the elasticsearch instance.
-- `ov2xmp-logstash` receives and handles the logs from the `ov2xmp` services (processing, formatting, output to one or multiple destinations).
 
 > Please note that the `ov2xmp-daphne`, `ov2xmp-csms` and `ov2xmp-celery` microservices are deployed from the same `ov2xmp-django` git submodule of the `ov2xmp` repo.
 
@@ -110,6 +106,12 @@ POSTGRES_PASSWORD=XXXX
 
 ### ELK stack
 
+Optionally, the ELK stack can be deploying alongside with O-V2X-MP, in order to manage and organise the various logs. To deploy the ELK stack, the following components should be deployed, which are located in the `docker-compose-externals.yml`:
+- `ov2xmp-logstash` receives and handles the logs from the `ov2xmp-csms` and `ov2xmp-daphne` services (processing, formatting, output to one or multiple destinations).
+- `ov2xmp-elasticsearch` can store the various system logs received by Logstash.
+- `ov2xmp-elasticsearch-setup` initiates the password of the `kibana_system` user (is executed only once and terminates).
+- `ov2xmp-kibana` is the GUI for managing the elasticsearch instance.
+
 For elasticsearch, the `.env-es` file and the `elasticsearch.yml` files are used.
 
 For kibana, the `.env-kibana` file is used.
@@ -120,7 +122,7 @@ Finally, `ov2xmp-elasticsearch-setup` utilises the `elk-setup.sh` script, which 
 
 ## O-V2X-MP Deployment
 
-GitHub Actions have been configured for all submodules with custom code, i.e. `ov2xmp-django`, `ftp-server` and `http-file-server`. For each commit pushed to the main branch of any of these submodules, the CI pipeline is triggered automatically to produce a docker image, which is uploaded to the GitHub docker registry.
+GitHub Actions have been configured for all submodules with custom code, i.e. `ov2xmp-django`, `ov2xmp-ftp-server` and `ov2xmp-http-file-server`. For each commit pushed to the main branch of any of these submodules, the CI pipeline is triggered automatically to produce a docker image, which is uploaded to the GitHub docker registry.
 
 However, it is preferable sometimes to test the integrated docker images without pushing commits to the main branch. Fpr this purpose, there are three kinds of deployment:
 
@@ -171,7 +173,7 @@ docker-compose -f docker-compose-staging.yml up -d
 
 ### Deploy O-V2X-MP in production
 
-To deploy in production, login to the GitHub registry and use the corresponding docker-compose file:
+To deploy in production, login to the GitHub container registry and use the corresponding docker-compose file:
 
 ```sh
 docker login ghcr.io -u USERNAME
