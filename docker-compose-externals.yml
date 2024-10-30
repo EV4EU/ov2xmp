@@ -1,7 +1,7 @@
 version: '3.8'
 
 services:
-  kafka_zookeeper:
+  ov2xmp-kafka_zookeeper:
     image: docker.io/bitnami/zookeeper:3.8
     hostname: kafka_zookeeper
     container_name: kafka_zookeeper
@@ -10,9 +10,9 @@ services:
     environment:
       - ALLOW_ANONYMOUS_LOGIN=yes
     networks:
-      - ov2xmp_ov2xmp-network
+      - ov2xmp-network
   
-  kafka:
+  ov2xmp-kafka:
     image: docker.io/bitnami/kafka:3.1
     container_name: kafka
     hostname: kafka
@@ -29,9 +29,9 @@ services:
     depends_on:
       - kafka_zookeeper
     networks:
-      - ov2xmp_ov2xmp-network
+      - ov2xmp-network
 
-  mqtt-broker:
+  ov2xmp-mqtt-broker:
     restart: always
     hostname: ov2xmp-mqtt
     container_name: ov2xmp-mqtt
@@ -41,7 +41,7 @@ services:
     ports:
       - "1883:1883"
     networks:
-      - ov2xmp_ov2xmp-network
+      - ov2xmp-network
 
   ov2xmp-elasticsearch:
     container_name: ov2xmp-elasticsearch
@@ -97,7 +97,7 @@ services:
       - ov2xmp-network
 
 networks:
-  ov2xmp_ov2xmp-network:
+  ov2xmp-network:
     external: true
 
 volumes:
