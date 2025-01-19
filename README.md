@@ -4,6 +4,25 @@
   [![ov2xmp-ftp-server](https://github.com/EV4EU/ov2xmp-ftp-server/actions/workflows/docker-image.yml/badge.svg)](https://github.com/EV4EU/ov2xmp-ftp-server/actions/workflows/docker-image.yml) 
   [![ov2xmp-http-file-server](https://github.com/EV4EU/ov2xmp-http-file-server/actions/workflows/docker-image.yml/badge.svg)](https://github.com/EV4EU/ov2xmp-http-file-server/actions/workflows/docker-image.yml) 
 
+## Citation
+
+If you want to use this work, please cite the following paper:
+
+```bibtex
+@article{DALAMAGKAS2025102494,
+title = {The Open V2X Management Platform: An intelligent charging station management system},
+journal = {Information Systems},
+volume = {129},
+pages = {102494},
+year = {2025},
+issn = {0306-4379},
+doi = {https://doi.org/10.1016/j.is.2024.102494},
+url = {https://www.sciencedirect.com/science/article/pii/S0306437924001522},
+author = {Christos Dalamagkas and V.D. Melissianos and George Papadakis and Angelos Georgakis and Vasileios-Martin Nikiforidis and Kostas Hrissagis-Chrysagis}
+}
+```
+
+## Introduction
 
 The Open Vehicle-To-Grid Management Platform (O-V2X-MP) is a set of microservices that implement the operation of a Charging Station Managment System (CSMS). The system is composed of the following microservices:
 
