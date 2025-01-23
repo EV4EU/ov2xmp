@@ -243,3 +243,10 @@ If the CSMS is deployed in development mode (i.e., directly from the source code
 > `ws://{OV2XMP_ADDRESS}:9000/ws/ocpp`
 
 Replace `{OV2XMP_ADDRESS}` with the local FQDN **OR** the IP address of the VM where the O-V2X-MP platform runs.
+
+
+## Integration with Frontend
+
+Due to the microservice architecture of O-V2X-MP, it can be easily integrated with any frontend microservice (e.g., a docker container running Vue.js or similar).
+
+To accomplish this, you should edit the `caddyfile-base` configuration file of caddy, and specify the target of the `reverse_proxy * ` directive. For example, provide `reverse_proxy * 192.168.21.25:5173` at the end of the file, if the frontend service is at 192.168.21.25 and listens to port 5173.
