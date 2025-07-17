@@ -4,6 +4,19 @@
   [![ov2xmp-ftp-server](https://github.com/EV4EU/ov2xmp-ftp-server/actions/workflows/docker-image.yml/badge.svg)](https://github.com/EV4EU/ov2xmp-ftp-server/actions/workflows/docker-image.yml) 
   [![ov2xmp-http-file-server](https://github.com/EV4EU/ov2xmp-http-file-server/actions/workflows/docker-image.yml/badge.svg)](https://github.com/EV4EU/ov2xmp-http-file-server/actions/workflows/docker-image.yml) 
 
+## Funding
+
+<table>
+    <tr>
+        <td>
+            <picture>
+                <image src="./docs/Flag_of_Europe.svg.png"/>
+            </picture>
+        </td>
+        <td>Funded by European Union´s Horizon Europe research and innovation programme under grant agreement no. 101056765 (EV4EU). Views and opinions expressed in this repository are however those of the authors only and do not necessarily reflect those of the European Union or the European Climate, Infrastructure and Environment Executive Agency (CINEA). Neither the European Union nor the granting authority can be held responsible for them.</td>
+    </tr>
+</table>
+
 ## Citation
 
 If you want to use this work, please cite the following paper:
